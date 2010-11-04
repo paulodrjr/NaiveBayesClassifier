@@ -6,18 +6,27 @@ import java.io.FileNotFoundException;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.lang.reflect.Array;
 import java.util.HashMap;
 import java.util.Scanner;
 import java.util.Hashtable;
 import java.util.Enumeration;
+import java.util.StringTokenizer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class main {
 
 	static Hashtable<String, String> vocabulary = new Hashtable<String, String>();
+	static Hashtable<String, String> config = new Hashtable<String, String>();
 	static File localdir = new File(".");
 	private static String VocabularyFileName = null;
+	static double Pv1 = 0;
+	static double Pv2 = 0;
+	static double Pv3 = 0;
+	static HashMap<String, Double> pWkV1;
+	static HashMap<String, Double> pWkV2;
+	static HashMap<String, Double> pWkV3;
 
 	public static String getValidWord(String str) {
 		if ((str.length() < 3) || (str.length() > 44))
@@ -41,8 +50,7 @@ public class main {
 		final String EmptyStr = "";
 		System.out.println("Creating vocabulary...");
 		while (scanner.hasNext()) {
-
-			s = getValidWord(scanner.next()).toLowerCase();
+			s = getValidWord(scanner.next()).toLowerCase().trim();
 			// s = scanner.next().trim();
 			int i = s.compareTo(EmptyStr);
 			if ((h.contains(s)) || (i == 0))
@@ -81,15 +89,14 @@ public class main {
 				Matcher m = p.matcher(s);
 				if (!m.matches())
 					r.append(s + "\n");
-
 			}
 
 			// dispose all the resources after using them.
 			File dir = new File(file.getParent() + "/output/");
 			if (!file.exists())
 				dir.mkdir();
-			writeTextFile(r.toString(),
-					dir.getAbsolutePath() + "/" + file.getName());
+			writeTextFile(r.toString(), dir.getAbsolutePath() + "/"
+					+ file.getName());
 			fis.close();
 			bis.close();
 			dis.close();
@@ -169,7 +176,8 @@ public class main {
 		}
 	}
 
-	public static void CalculateProbabilities(String classText, String className) {
+	public static HashMap<String, Double> CalculateProbabilities(
+			String classText, String className) {
 		Enumeration<String> e = vocabulary.keys();
 
 		WordCounter counter = new WordCounter(classText);
@@ -187,13 +195,15 @@ public class main {
 		try {
 			savePercentages(pWkV, localdir.getCanonicalPath() + "/files/pWkV"
 					+ className + ".text");
+			return pWkV;
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
+			return null;
 		}
 	}
 
-	public static void step1() {
+	public static void train() {
 		String contents;
 		try {
 
@@ -207,16 +217,23 @@ public class main {
 			String textClass2 = "";
 			String textClass3 = "";
 
+			CleanFiles(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/alt.atheism");
+
+			CleanFiles(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/soc.religion.christian");
+
+			CleanFiles(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/talk.religion.misc");
 			
-		  CleanFiles(localdir.getCanonicalPath() +
-		  "/files/20news-bydate-train/alt.atheism");
-		  
-		  CleanFiles(localdir.getCanonicalPath() +
-		  "/files/20news-bydate-train/soc.religion.christian");
-		  
-		  CleanFiles(localdir.getCanonicalPath() +
-		  "/files/20news-bydate-train/talk.religion.misc");
-			 
+			CleanFiles(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-train/alt.atheism");
+
+			CleanFiles(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-train/soc.religion.christian");
+
+			CleanFiles(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-train/talk.religion.misc");
 
 			// using Threads to in order to improve reading performance
 
@@ -253,16 +270,23 @@ public class main {
 			else
 				vocabulary = createVocabulary(contents);
 
-			if (vocabulary.containsKey(""))
-				System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
-
 			Integer nExamples = reader1.count + reader2.count + reader3.count;
+			double v1 = reader1.count;
+			double v2 = nExamples;
+			Pv1 = v1 / v2;
+			v1 = reader2.count;			
+			Pv2 = v1 / v2;
+			v1 = reader3.count;			
+			Pv3 = v1 / v2;
+			config.put("Pv1", Double.toString(Pv1));
+			config.put("Pv2", Double.toString(Pv2));
+			config.put("Pv3", Double.toString(Pv3));
 
-			double Pv1 = reader1.count / (nExamples);
+			saveConfig(localdir.getCanonicalPath() + "/files/config.text");
 
-			CalculateProbabilities(textClass1, "alt.atheism");
-			CalculateProbabilities(textClass2, "soc.religion.christian");
-			CalculateProbabilities(textClass3, "talk.religion.misc");
+			pWkV1 = CalculateProbabilities(textClass1, "alt.atheism");
+			pWkV2 = CalculateProbabilities(textClass2, "soc.religion.christian");
+			pWkV3 = CalculateProbabilities(textClass3, "talk.religion.misc");
 
 			Enumeration e = vocabulary.keys();
 
@@ -281,24 +305,114 @@ public class main {
 		}
 	}
 
+	private static void saveConfig(String filename) {
+		writeTextFile(config.toString(), filename);
+	}
+
 	private static void savePercentages(HashMap<String, Double> pWkV1,
 			String filename) {
 		writeTextFile(pWkV1.toString(), filename);
 	}
 
 	public static void main(String[] args) {
-		// WordCounter counter = new WordCounter();
-		// int n = counter
-		// .getDistinctWordsCount("As informações que os escritores antigos deixaram sobre sua vida são extremamente pobres, mas sua influência atravessou os séculos e é percebida até nos dias de hoje. Na Antiguidade ficou conhecido graças às suas esculturas de atletas e a uma colossal estátua de Hera, esculpida em marfim e ouro e instalada no templo da deusa em Argos. Mas a enorme fama de Policleto derivou principalmente de seu tratado teórico");
-		// System.out.println(n);
-		// System.out.println(counter.getWordCountInText("os"));
 		try {
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
+			train();			
+			
+			classify(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/alt.atheism/output/");
+			classify(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/talk.religion.misc/output/");
+			classify(localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/soc.religion.christian/output/");	
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		step1();
+	}
+		
+	private static void classify(String fileName) {		
+		// HashMap<String, Double> PwKv1 = getProbabilities("alt.atheism");
+		Reader reader;
+		
+		reader = new Reader(fileName, "");
+		reader.start();
+		while (reader.isAlive()) {
+		}
+		StringTokenizer tokenizer = new StringTokenizer(reader.getFilesContent());
+		
+		double c1 = 0;
+		double c2 = 0;
+		double c3 = 0;
+		while (tokenizer.hasMoreElements()) {
+			String token = getValidWord(tokenizer.nextToken()).trim().toLowerCase();
+			if (token.compareTo("") == 0)
+				continue;			
+			if (pWkV1.containsKey(token)) {
+				c1 += pWkV1.get(token);
+			}
+			if (pWkV2.containsKey(token)) {
+				c2 += pWkV2.get(token);
+			}
+			if (pWkV3.containsKey(token)) {
+				c3 += pWkV3.get(token);
+			}	
+
+		}
+		c1 = Pv1 * c1;
+		c2 = Pv2 * c2;
+		c3 = Pv3 * c3;
+		if ((c1 > c2) && (c1 > c3))
+			System.out.println("Classe 1!");
+		else if ((c2 > c1) && (c2 > c3))
+			System.out.println("Classe 2!");
+		else if ((c3 > c1) && (c3 > c3))
+			System.out.println("Classe 3!");
+		else
+			System.out.println("Whatever: " + c1 + "; " + c2 + ";" + c3);
+	}
+
+	private static HashMap<String, Double> getProbabilities(String className) {
+		try {
+			String filename = localdir.getCanonicalPath() + "/files/pWkV"
+					+ className + ".text";
+
+			System.out.println("Reading probabilities from file " + filename);
+
+			File file = new File(filename);
+			FileInputStream fis = null;
+			BufferedInputStream bis = null;
+			DataInputStream dis = null;
+			StringBuffer r = new StringBuffer();
+
+			HashMap<String, Double> res = new HashMap<String, Double>();
+
+			fis = new FileInputStream(file);
+
+			// Here BufferedInputStream is added for fast reading.
+			bis = new BufferedInputStream(fis);
+			dis = new DataInputStream(bis);
+			// dis.available() returns 0 if the file does not have more lines.
+			final String EmptyStr = "";
+			while (dis.available() != 0) {
+				String s = dis.readLine();
+				// String[] values = s.split(=)
+			}
+
+			// dispose all the resources after using them.
+			fis.close();
+			bis.close();
+			dis.close();
+			System.out.println("Reading vocabulary done.");
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return null;
+		} catch (IOException e) {
+			e.printStackTrace();
+			return null;
+		}
+		return null;
 	}
 }
