@@ -48,7 +48,6 @@ public class main {
 			if ((h.contains(s)) || (i == 0))
 				continue;
 			h.put(s, s);
-
 		}
 		System.out.println("Creating vocabulary done.");
 		return h;
@@ -89,8 +88,8 @@ public class main {
 			File dir = new File(file.getParent() + "/output/");
 			if (!file.exists())
 				dir.mkdir();
-			writeTextFile(r.toString(), dir.getAbsolutePath() + "/"
-					+ file.getName());
+			writeTextFile(r.toString(),
+					dir.getAbsolutePath() + "/" + file.getName());
 			fis.close();
 			bis.close();
 			dis.close();
@@ -208,16 +207,16 @@ public class main {
 			String textClass2 = "";
 			String textClass3 = "";
 
-			/*
-			 * CleanFiles(localdir.getCanonicalPath() +
-			 * "/files/20news-bydate-train/alt.atheism");
-			 * 
-			 * CleanFiles(localdir.getCanonicalPath() +
-			 * "/files/20news-bydate-train/soc.religion.christian");
-			 * 
-			 * CleanFiles(localdir.getCanonicalPath() +
-			 * "/files/20news-bydate-train/talk.religion.misc");
-			 */
+			
+		  CleanFiles(localdir.getCanonicalPath() +
+		  "/files/20news-bydate-train/alt.atheism");
+		  
+		  CleanFiles(localdir.getCanonicalPath() +
+		  "/files/20news-bydate-train/soc.religion.christian");
+		  
+		  CleanFiles(localdir.getCanonicalPath() +
+		  "/files/20news-bydate-train/talk.religion.misc");
+			 
 
 			// using Threads to in order to improve reading performance
 
@@ -254,6 +253,9 @@ public class main {
 			else
 				vocabulary = createVocabulary(contents);
 
+			if (vocabulary.containsKey(""))
+				System.out.println("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+
 			Integer nExamples = reader1.count + reader2.count + reader3.count;
 
 			double Pv1 = reader1.count / (nExamples);
@@ -262,16 +264,17 @@ public class main {
 			CalculateProbabilities(textClass2, "soc.religion.christian");
 			CalculateProbabilities(textClass3, "talk.religion.misc");
 
-			/*
-			 * Enumeration e = vocabulary.keys();
-			 * 
-			 * s = new StringBuffer(); while (e.hasMoreElements()) {
-			 * s.append(e.nextElement().toString() + "\n"); }
-			 * writeTextFile(s.toString(), localdir.getCanonicalPath() +
-			 * "/files/vocabulary.text"); System.out.println("File " +
-			 * localdir.getCanonicalPath() + "/files/vocabulary.text" +
-			 * " successfully created.");
-			 */
+			Enumeration e = vocabulary.keys();
+
+			StringBuffer s = new StringBuffer();
+			while (e.hasMoreElements()) {
+				s.append(e.nextElement().toString() + "\n");
+			}
+			writeTextFile(s.toString(), localdir.getCanonicalPath()
+					+ "/files/vocabulary.text");
+			System.out.println("File " + localdir.getCanonicalPath()
+					+ "/files/vocabulary.text" + " successfully created.");
+
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
