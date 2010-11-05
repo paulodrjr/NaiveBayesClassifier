@@ -27,9 +27,12 @@ public class main {
 	static HashMap<String, Double> pWkV1;
 	static HashMap<String, Double> pWkV2;
 	static HashMap<String, Double> pWkV3;
+	static String className1 = "rec.autos";
+	static String className2 = "soc.religion.christian";
+	static String className3 = "talk.religion.misc";
 
 	public static String getValidWord(String str) {
-		if ((str.length() < 3) || (str.length() > 44))
+		if ((str.length() <= 3) || (str.length() > 44))
 			return "";
 		StringBuilder sb = new StringBuilder();
 		for (char c : str.toCharArray()) {
@@ -95,8 +98,8 @@ public class main {
 			File dir = new File(file.getParent() + "/output/");
 			if (!file.exists())
 				dir.mkdir();
-			writeTextFile(r.toString(), dir.getAbsolutePath() + "/"
-					+ file.getName());
+			writeTextFile(r.toString(),
+					dir.getAbsolutePath() + "/" + file.getName());
 			fis.close();
 			bis.close();
 			dis.close();
@@ -203,7 +206,7 @@ public class main {
 		}
 	}
 
-	public static void train() {
+	public static void train(boolean recreateVocabulary) {
 		String contents;
 		try {
 
@@ -218,16 +221,16 @@ public class main {
 			String textClass3 = "";
 
 			CleanFiles(localdir.getCanonicalPath()
-					+ "/files/20news-bydate-test/alt.atheism");
+					+ "/files/20news-bydate-test/rec.autos");
 
 			CleanFiles(localdir.getCanonicalPath()
 					+ "/files/20news-bydate-test/soc.religion.christian");
 
 			CleanFiles(localdir.getCanonicalPath()
 					+ "/files/20news-bydate-test/talk.religion.misc");
-			
+
 			CleanFiles(localdir.getCanonicalPath()
-					+ "/files/20news-bydate-train/alt.atheism");
+					+ "/files/20news-bydate-train/rec.autos");
 
 			CleanFiles(localdir.getCanonicalPath()
 					+ "/files/20news-bydate-train/soc.religion.christian");
@@ -238,7 +241,7 @@ public class main {
 			// using Threads to in order to improve reading performance
 
 			reader1 = new Reader(localdir.getCanonicalPath()
-					+ "/files/20news-bydate-train/alt.atheism/output", "");
+					+ "/files/20news-bydate-train/rec.autos/output", "");
 			reader2 = new Reader(
 					localdir.getCanonicalPath()
 							+ "/files/20news-bydate-train/soc.religion.christian/output",
@@ -265,7 +268,7 @@ public class main {
 					+ "/files/text3.text");
 
 			contents = textClass1 + textClass2 + textClass3;
-			if (VocabularyFile.exists())
+			if (VocabularyFile.exists() || recreateVocabulary)
 				readVocabularyFile();
 			else
 				vocabulary = createVocabulary(contents);
@@ -274,9 +277,9 @@ public class main {
 			double v1 = reader1.count;
 			double v2 = nExamples;
 			Pv1 = v1 / v2;
-			v1 = reader2.count;			
+			v1 = reader2.count;
 			Pv2 = v1 / v2;
-			v1 = reader3.count;			
+			v1 = reader3.count;
 			Pv3 = v1 / v2;
 			config.put("Pv1", Double.toString(Pv1));
 			config.put("Pv2", Double.toString(Pv2));
@@ -284,7 +287,7 @@ public class main {
 
 			saveConfig(localdir.getCanonicalPath() + "/files/config.text");
 
-			pWkV1 = CalculateProbabilities(textClass1, "alt.atheism");
+			pWkV1 = CalculateProbabilities(textClass1, "rec.autos");
 			pWkV2 = CalculateProbabilities(textClass2, "soc.religion.christian");
 			pWkV3 = CalculateProbabilities(textClass3, "talk.religion.misc");
 
@@ -318,37 +321,59 @@ public class main {
 		try {
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
-			train();			
-			
+			train(true);
+
+			// classify(localdir.getCanonicalPath()
+			// + "/files/20news-bydate-test/rec.autos/output/", true);
+			// classify(localdir.getCanonicalPath()
+			// + "/files/20news-bydate-test/talk.religion.misc/output/", true);
+			// classify(localdir.getCanonicalPath()
+			// + "/files/20news-bydate-test/soc.religion.christian/output/",
+			// true);
 			classify(localdir.getCanonicalPath()
-					+ "/files/20news-bydate-test/alt.atheism/output/");
-			classify(localdir.getCanonicalPath()
-					+ "/files/20news-bydate-test/talk.religion.misc/output/");
-			classify(localdir.getCanonicalPath()
-					+ "/files/20news-bydate-test/soc.religion.christian/output/");	
+						 + "/files/20news-bydate-test/rec.autos/output/", true, false);
+//			classify("driven", false, true);
+//			classify("car", false, true);
+//			classify("god", false, true);
+//			classify("angel", false, true);
+//			classify("saturn", false, true);
+			classify("beast", false, true);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
-		
-	private static void classify(String fileName) {		
+
+	private static void classify(String input, boolean isDirectory,
+			boolean isString) {
 		// HashMap<String, Double> PwKv1 = getProbabilities("alt.atheism");
 		Reader reader;
-		
-		reader = new Reader(fileName, "");
-		reader.start();
-		while (reader.isAlive()) {
+		StringTokenizer tokenizer;
+
+		if (isDirectory) {
+			reader = new Reader(input, "");
+			reader.start();
+			while (reader.isAlive()) {
+			}
+			tokenizer = new StringTokenizer(reader.getFilesContent());
+		} else if (isString) {
+			tokenizer = new StringTokenizer(input);
+		} else {
+			reader = new Reader("", input);
+			reader.start();
+			while (reader.isAlive()) {
+			}
+			tokenizer = new StringTokenizer(reader.getFilesContent());
 		}
-		StringTokenizer tokenizer = new StringTokenizer(reader.getFilesContent());
-		
+
 		double c1 = 0;
 		double c2 = 0;
 		double c3 = 0;
 		while (tokenizer.hasMoreElements()) {
-			String token = getValidWord(tokenizer.nextToken()).trim().toLowerCase();
+			String token = getValidWord(tokenizer.nextToken()).trim()
+					.toLowerCase();
 			if (token.compareTo("") == 0)
-				continue;			
+				continue;
 			if (pWkV1.containsKey(token)) {
 				c1 += pWkV1.get(token);
 			}
@@ -357,18 +382,18 @@ public class main {
 			}
 			if (pWkV3.containsKey(token)) {
 				c3 += pWkV3.get(token);
-			}	
+			}
 
 		}
 		c1 = Pv1 * c1;
 		c2 = Pv2 * c2;
 		c3 = Pv3 * c3;
 		if ((c1 > c2) && (c1 > c3))
-			System.out.println("Classe 1!");
+			System.out.println(className1);
 		else if ((c2 > c1) && (c2 > c3))
-			System.out.println("Classe 2!");
-		else if ((c3 > c1) && (c3 > c3))
-			System.out.println("Classe 3!");
+			System.out.println(className2);
+		else if ((c3 > c1) && (c3 > c2))
+			System.out.println(className3);
 		else
 			System.out.println("Whatever: " + c1 + "; " + c2 + ";" + c3);
 	}

@@ -11,7 +11,7 @@ public class Reader extends Thread {
 	String filesContents = "";
 	String dir;
 	String fileName = "";
-	int count;
+	int count = 0;
 
 	public Reader(String pdir, String pFileName) {
 		dir = pdir;
@@ -19,7 +19,7 @@ public class Reader extends Thread {
 	}
 
 	private String getValidWord(String str) {
-		if ((str.length() < 3) || (str.length() > 44))
+		if ((str.length() <= 3) || (str.length() > 44))
 			return "";
 		StringBuilder sb = new StringBuilder();
 		for (char c : str.toCharArray()) {
