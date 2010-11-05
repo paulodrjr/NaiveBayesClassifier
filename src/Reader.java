@@ -11,7 +11,7 @@ public class Reader extends Thread {
 	String filesContents = "";
 	String dir;
 	String fileName = "";
-	Integer count;
+	int count;
 
 	public Reader(String pdir, String pFileName) {
 		dir = pdir;
