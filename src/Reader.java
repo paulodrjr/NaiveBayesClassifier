@@ -12,10 +12,15 @@ public class Reader extends Thread {
 	String dir;
 	String fileName = "";
 	int count = 0;
+	Semaphore semaphore = null;
+	boolean printMessages;
 
-	public Reader(String pdir, String pFileName) {
+	public Reader(String pdir, String pFileName, Semaphore semaphore,
+			boolean printOut) {
 		dir = pdir;
 		fileName = pFileName;
+		this.semaphore = semaphore;
+		this.printMessages = printOut;
 	}
 
 	private String getValidWord(String str) {
@@ -95,7 +100,7 @@ public class Reader extends Thread {
 			dis = new DataInputStream(bis);
 			while (dis.available() != 0) {
 				r.append(dis.readLine() + "\n");
-				count ++;
+				count++;
 			}
 
 			// dispose all the resources after using them.
@@ -122,8 +127,9 @@ public class Reader extends Thread {
 		String temp = "";
 		StringBuffer buffer = new StringBuffer();
 
-		System.out.println("Bufferizing content from files from directory "
-				+ dir);
+		if (printMessages)
+			System.out.println("Bufferizing content from files from directory "
+					+ dir);
 
 		for (int i = 0; i < listOfFiles.length; i++) {
 			if (listOfFiles[i].isFile()) {
@@ -141,10 +147,11 @@ public class Reader extends Thread {
 	}
 
 	public void run() {
+		while (!semaphore.tryAcquire()) {
+		}
 		if (dir.compareTo("") == 0)
 			filesContents = readTextFile(fileName);
 		else
 			filesContents = ReadFiles(dir);
-
 	}
 }
