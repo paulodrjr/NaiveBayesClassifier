@@ -288,7 +288,7 @@ public class main {
 			if (testDirs.length != trainDirs.length)
 				throw new Exception(
 						"O número de diretórios de teste e de treino tem que ser iguais!");
-			
+
 			internalClassNames = getClassNames(trainDirs);
 
 			classCount = trainDirs.length;
@@ -365,14 +365,14 @@ public class main {
 		String[] r = new String[trainDirs.length];
 		for (int i = 0; i < r.length; i++) {
 			File f = new File(trainDirs[i]);
-			r[i] = f.getName();			
+			r[i] = f.getName();
 		}
 		return r;
 	}
 
 	private static String[] dirlist(String dirPath) {
 		File dir = new File(dirPath);
-		String[] chld = dir.list();		
+		String[] chld = dir.list();
 		if (chld == null) {
 			System.out
 					.println("Specified directory does not exist or is not a directory.");
@@ -387,41 +387,35 @@ public class main {
 	}
 
 	public static void main(String[] args) {
-		
-		try {			
+
+		try {
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
 
-//			String[] testDirs = {
-//					localdir.getCanonicalPath()
-//							+ "/files/20news-bydate-test/rec.autos",
-//					localdir.getCanonicalPath()
-//							+ "/files/20news-bydate-test/talk.religion.misc",
-//					localdir.getCanonicalPath()
-//							+ "/files/20news-bydate-test/soc.religion.christian" };
-//			String[] trainDirs = {
-//					localdir.getCanonicalPath()
-//							+ "/files/20news-bydate-train/rec.autos",
-//					localdir.getCanonicalPath()
-//							+ "/files/20news-bydate-train/talk.religion.misc",
-//					localdir.getCanonicalPath()
-//							+ "/files/20news-bydate-train/soc.religion.christian" };
+			// String[] testDirs = {
+			// localdir.getCanonicalPath()
+			// + "/files/20news-bydate-test/rec.autos",
+			// localdir.getCanonicalPath()
+			// + "/files/20news-bydate-test/talk.religion.misc",
+			// localdir.getCanonicalPath()
+			// + "/files/20news-bydate-test/soc.religion.christian" };
+			// String[] trainDirs = {
+			// localdir.getCanonicalPath()
+			// + "/files/20news-bydate-train/rec.autos",
+			// localdir.getCanonicalPath()
+			// + "/files/20news-bydate-train/talk.religion.misc",
+			// localdir.getCanonicalPath()
+			// + "/files/20news-bydate-train/soc.religion.christian" };
 			String[] testDirs = dirlist(localdir.getCanonicalPath()
 					+ "/files/20news-bydate-test/");
 			String[] trainDirs = dirlist(localdir.getCanonicalPath()
-					+ "/files/20news-bydate-train/");		
+					+ "/files/20news-bydate-train/");
 
 			classTexts = prepare(trainDirs, testDirs, true);
 			train(trainDirs, testDirs);
-			
+
 			classify(testDirs);
 
-//			classify(localdir.getCanonicalPath()
-//					+ "/files/20news-bydate-test/rec.autos/output/");
-//			classify(localdir.getCanonicalPath()
-//					+ "/files/20news-bydate-test/talk.religion.misc/output/");
-//			classify(localdir.getCanonicalPath()
-//					+ "/files/20news-bydate-test/soc.religion.christian/output/");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -439,24 +433,36 @@ public class main {
 		}
 		return classMax;
 	}
-	
-	private static void classify(String[] input){
+
+	private static void classify(String[] input) {
+		StringBuffer stringBuffer = new StringBuffer();
 		for (int i = 0; i < input.length; i++) {
-			classify(input[i]);
+			Reader reader;
+			String[] files = dirlist(input[i] + "/output/");			
+			for (int j = 0; j < files.length; j++) {
+				Semaphore s = new Semaphore(1);
+				reader = new Reader("", files[j], s, false);
+				reader.start();
+				while (reader.isAlive()) {
+				}
+				stringBuffer.append(classify(reader.filesContents, files[j]) + "\n");
+			}			
+		}
+		try {
+			writeTextFile(stringBuffer.toString(), localdir.getCanonicalPath()
+						+ "/files/classification.text");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
 
-	private static void classify(String input) {
+	private static String classify(String input, String name) {
 		// HashMap<String, Double> PwKv1 = getProbabilities("alt.atheism");
-		Reader reader;
+
 		StringTokenizer tokenizer;
 
-		Semaphore s = new Semaphore(1);
-		reader = new Reader(input, "", s, false);
-		reader.start();
-		while (reader.isAlive()) {
-		}
-		tokenizer = new StringTokenizer(reader.getFilesContent());
+		tokenizer = new StringTokenizer(input);
 
 		double[] classification = new double[classCount];
 		while (tokenizer.hasMoreElements()) {
@@ -475,8 +481,10 @@ public class main {
 		}
 
 		int classMax = max(classification);
-
-		System.out.println(input + " = " + internalClassNames[classMax]);
+		
+		File file = new File(input);
+		return(name + " = "
+				+ internalClassNames[classMax]);
 
 	}
 
