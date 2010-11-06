@@ -1,21 +1,24 @@
 import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.StringTokenizer;
 import java.util.concurrent.Semaphore;
 
-public class Reader extends Thread {	
+public class Reader extends Thread {
 	String filesContents = "";
 	String dir;
 	String fileName = "";
-	int count = 0;	
+	int count = 0;
 	boolean printMessages;
 
 	public Reader(String pdir, String pFileName, boolean printOut) {
 		dir = pdir;
-		fileName = pFileName;		
+		fileName = pFileName;
 		this.printMessages = printOut;
 	}
 
@@ -35,51 +38,32 @@ public class Reader extends Thread {
 
 	@SuppressWarnings("deprecation")
 	private String readAndCleanTextFile(String fileName) {
-		File file = new File(fileName);
-		FileInputStream fis = null;
-		BufferedInputStream bis = null;
-		DataInputStream dis = null;
-		StringBuffer r = new StringBuffer();
+		BufferedReader in;
 		try {
-			fis = new FileInputStream(file);
+			in = new BufferedReader(new FileReader(fileName));
+			String str;			
+			StringBuffer r = new StringBuffer();
 
-			// Here BufferedInputStream is added for fast reading.
-			bis = new BufferedInputStream(fis);
-			dis = new DataInputStream(bis);
-			// dis.available() returns 0 if the file does not have more lines.
-			final String EmptyStr = "";
-			while (dis.available() != 0) {
-				String t = dis.readLine().trim();
-				String[] vals = t.split(" ");
-				String line = "";
-				for (String string : vals) {
-					t = getValidWord(string).toLowerCase().trim();
-					int i = t.compareTo(EmptyStr);
-					if (i == 0)
-						continue;
-					line += t + " ";
-				}
+			while ((str = in.readLine()) != null) {
 
-				if (line.trim().compareTo("") != 0) {
-					r.append(line.trim() + "\n");
-					// System.out.println(line);
-				}
-
+				StringTokenizer st = new StringTokenizer(str);
+				String cleanStr = "";
+				while (st.hasMoreElements()) {
+					String token = st.nextToken();
+					cleanStr += getValidWord(token).trim()
+							.toLowerCase()
+							+ " ";
+				}				
+				r.append(cleanStr);
 			}
 
-			// dispose all the resources after using them.
-			fis.close();
-			bis.close();
-			dis.close();
 			return r.toString();
-
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return "";
 		} catch (IOException e) {
+			// TODO Auto-generated catch block
 			e.printStackTrace();
-			return "";
+			return null;
 		}
+
 	}
 
 	private String readTextFile(String fileName) {
@@ -129,12 +113,12 @@ public class Reader extends Thread {
 
 		for (int i = 0; i < listOfFiles.length; i++) {
 			if (listOfFiles[i].isFile()) {
-				temp = readAndCleanTextFile(listOfFiles[i].getAbsolutePath());
-				buffer.append(temp + "\t");
-			} else if (listOfFiles[i].isDirectory()) {
-				System.out.println("Directory " + listOfFiles[i].getName());
+				temp = readAndCleanTextFile(listOfFiles[i].getAbsolutePath())
+						.trim();
+				buffer.append(temp + "\n");
 			}
 		}
+		System.out.println(buffer);
 		return buffer.toString();
 	}
 
