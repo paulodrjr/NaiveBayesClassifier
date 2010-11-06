@@ -6,20 +6,16 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.Semaphore;
 
-public class Reader extends Thread {
-	Semaphore s = new Semaphore(1);
+public class Reader extends Thread {	
 	String filesContents = "";
 	String dir;
 	String fileName = "";
-	int count = 0;
-	Semaphore semaphore = null;
+	int count = 0;	
 	boolean printMessages;
 
-	public Reader(String pdir, String pFileName, Semaphore semaphore,
-			boolean printOut) {
+	public Reader(String pdir, String pFileName, boolean printOut) {
 		dir = pdir;
-		fileName = pFileName;
-		this.semaphore = semaphore;
+		fileName = pFileName;		
 		this.printMessages = printOut;
 	}
 
@@ -147,8 +143,6 @@ public class Reader extends Thread {
 	}
 
 	public void run() {
-		while (!semaphore.tryAcquire()) {
-		}
 		if (dir.compareTo("") == 0)
 			filesContents = readTextFile(fileName);
 		else
