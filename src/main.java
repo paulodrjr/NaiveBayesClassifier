@@ -1,3 +1,4 @@
+import java.awt.List;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -8,14 +9,12 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.Semaphore;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class main {
 
@@ -39,8 +38,9 @@ public class main {
 	 * @return
 	 */
 	public static String getValidWord(String str) {
-		// deixar de fora palavras com tamanho menor que 3 ou maior que 44
-		if ((str.length() <= 3) || (str.length() > 44))
+		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
+		// 44
+		if ((str.length() <= 3) /* || (str.length() > 44) */)
 			return "";
 		StringBuilder sb = new StringBuilder();
 		// deixar de fora palavras com caracteres inválidos
@@ -48,7 +48,8 @@ public class main {
 			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
 				sb.append(c);
 			} else {
-				return "";
+				if (c == '@')
+					return "";
 			}
 		}
 		return sb.toString();
@@ -98,6 +99,23 @@ public class main {
 			HashMap<String, Integer> h) {
 		HashMap<String, Integer> map = h;
 
+		// remover as palavras que aparecem menos de 3 vezes
+		Iterator<String> it = map.keySet().iterator();
+		ArrayList<String> list = new ArrayList<String>();
+		while (it.hasNext()) {
+			String key = it.next();
+			if (map.containsKey(key))
+				if (map.get(key) < 3)
+					list.add(key);
+		}
+
+		if (map.containsKey(""))
+			list.add("");
+
+		for (int i = 0; i < list.size(); i++) {
+			map.remove(list.get(i));
+		}
+
 		Integer[] values = new Integer[100];
 		String[] keys = new String[100];
 
@@ -107,7 +125,7 @@ public class main {
 			keys[i] = "";
 		}
 
-		Iterator<String> it = h.keySet().iterator();
+		it = map.keySet().iterator();
 		while (it.hasNext()) {
 			String word = it.next();
 			// pega a contagem de cada word
@@ -115,7 +133,8 @@ public class main {
 			int i = 0;
 			boolean done = false;
 			while (i < values.length && !done) {
-				// se a contagem de word for maior que a posição corrente, mover
+				// se a contagem de word for maior que a posição corrente,
+				// mover
 				// contadores anteriores e inserir nova palavra
 				if (v > values[i]) {
 					for (int j = values.length - 1; j > i; j--) {
@@ -151,7 +170,7 @@ public class main {
 			in = new BufferedReader(new FileReader(fileName));
 			String str;
 			StringBuffer r = new StringBuffer();
-			boolean startCommentsRead = false;			
+			boolean startCommentsRead = false;
 
 			// tenta deixar de fora o cabeçalho do e-mail, pulando todas as
 			// linhas até encontrar uma linha em branco.
@@ -169,19 +188,19 @@ public class main {
 				r.append(cleanStr);
 			}
 			File file = new File(fileName);
-			
+
 			File dir = new File(file.getParent() + "/output/");
 			if (!dir.exists())
 				dir.mkdir();
-			writeTextFile(r.toString(), dir.getAbsolutePath() + "/"
-					+ file.getName());
+			writeTextFile(r.toString(),
+					dir.getAbsolutePath() + "/" + file.getName());
 			return r.toString();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 			return null;
 		}
-		
+
 	}
 
 	/**
@@ -277,6 +296,7 @@ public class main {
 		Set<String> e = vocabulary.keySet();
 
 		WordCounter counter = new WordCounter(classText);
+		System.out.println(classText);
 		int n = counter.getWordsCount();
 		HashMap<String, Double> pWkV = new HashMap<String, Double>();
 
@@ -299,6 +319,7 @@ public class main {
 		}
 	}
 
+	@SuppressWarnings("unchecked")
 	public static void train() {
 
 		System.out
@@ -328,8 +349,8 @@ public class main {
 	 * @param trainDirs
 	 * @param testDirs
 	 * @param recreateVocabulary
-	 * @return um array de string, onde cada i-ésima posição contém o conteúdo
-	 *         concatenado dos textos da classe
+	 * @return um array de string, onde cada i-ésima posição contém o
+	 *         conteúdo concatenado dos textos da classe
 	 */
 	private static String[] prepare(String[] trainDirs, String[] testDirs,
 			boolean recreateVocabulary) {

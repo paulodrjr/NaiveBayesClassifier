@@ -7,7 +7,6 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.StringTokenizer;
-import java.util.concurrent.Semaphore;
 
 public class Reader extends Thread {
 	String filesContents = "";
@@ -23,14 +22,16 @@ public class Reader extends Thread {
 	}
 
 	private String getValidWord(String str) {
-		if ((str.length() <= 3) || (str.length() > 44))
+		if ((str.length() <= 3) /* || (str.length() > 44) */)
 			return "";
 		StringBuilder sb = new StringBuilder();
+		// deixar de fora palavras com caracteres inválidos
 		for (char c : str.toCharArray()) {
 			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
 				sb.append(c);
 			} else {
-				return "";
+				if (c == '@')
+					return "";
 			}
 		}
 		return sb.toString();
@@ -41,23 +42,26 @@ public class Reader extends Thread {
 		BufferedReader in;
 		try {
 			in = new BufferedReader(new FileReader(fileName));
-			String str;			
-			StringBuffer r = new StringBuffer();
+			try {
+				String str;
+				StringBuffer r = new StringBuffer();
 
-			while ((str = in.readLine()) != null) {
+				while ((str = in.readLine()) != null) {
 
-				StringTokenizer st = new StringTokenizer(str);
-				String cleanStr = "";
-				while (st.hasMoreElements()) {
-					String token = st.nextToken();
-					cleanStr += getValidWord(token).trim()
-							.toLowerCase()
-							+ " ";
-				}				
-				r.append(cleanStr);
+					StringTokenizer st = new StringTokenizer(str);
+					String cleanStr = "";
+					while (st.hasMoreElements()) {
+						String token = st.nextToken();
+						cleanStr += getValidWord(token).trim().toLowerCase()
+								+ " ";
+					}
+					r.append(cleanStr);
+				}
+				return r.toString();
+			} finally {
+				in.close();
 			}
 
-			return r.toString();
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -108,7 +112,7 @@ public class Reader extends Thread {
 		StringBuffer buffer = new StringBuffer();
 
 		if (printMessages)
-			System.out.println("Bufferizing content from files from directory "
+			System.out.println("Buffering content from files from directory "
 					+ dir);
 
 		for (int i = 0; i < listOfFiles.length; i++) {
@@ -118,7 +122,7 @@ public class Reader extends Thread {
 				buffer.append(temp + "\n");
 			}
 		}
-		System.out.println(buffer);
+//		System.out.println(buffer);
 		return buffer.toString();
 	}
 
