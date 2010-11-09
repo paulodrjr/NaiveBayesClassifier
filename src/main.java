@@ -40,7 +40,8 @@ public class main {
 	public static String getValidWord(String str) {
 		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
 		// 44
-		if ((str.length() <= 3)  || (str.length() > 44) )
+		
+		if ((str.length() < 3)  || (str.length() > 44) )
 			return "";
 		StringBuilder sb = new StringBuilder();
 		// deixar de fora palavras com caracteres inválidos
@@ -49,6 +50,24 @@ public class main {
 				sb.append(c);
 			} else {
 				if (c == '@')
+					return "";
+			}
+		}
+		return sb.toString();
+	}
+	
+	public static String getValidWordVocabulary(String str) {
+		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
+		// 44
+		
+		if ((str.length() < 3)  || (str.length() > 44) )
+			return "";
+		StringBuilder sb = new StringBuilder();
+		// deixar de fora palavras com caracteres inválidos
+		for (char c : str.toCharArray()) {
+			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+				sb.append(c);
+			} else {				
 					return "";
 			}
 		}
@@ -71,7 +90,8 @@ public class main {
 		while (st.hasMoreElements()) {
 
 			// tenta eliminar tokens indesejáveis
-			word = getValidWord(st.nextToken()).toLowerCase().trim();
+			word = getValidWordVocabulary(st.nextToken().toLowerCase().trim());
+//			word = st.nextToken().toLowerCase().trim();
 
 			int i = word.compareTo(EmptyStr);
 			if (i == 0)
@@ -87,6 +107,7 @@ public class main {
 		System.out.println("Creating vocabulary done.");
 
 		return cleanVocabulary(map);
+//		return map;
 	}
 
 	/**
@@ -103,10 +124,9 @@ public class main {
 		Iterator<String> it = map.keySet().iterator();
 		ArrayList<String> list = new ArrayList<String>();
 		while (it.hasNext()) {
-			String key = it.next();
-			if (map.containsKey(key))
-				if (map.get(key) < 3)
-					list.add(key);
+			String key = it.next();			
+			if (map.get(key) < 3)
+				list.add(key);
 		}
 
 		if (map.containsKey(""))
@@ -169,10 +189,10 @@ public class main {
 				&& (!(valor.contains("organization:")))
 				&& (!(valor.contains("nntp-posting-host:")))
 				&& (!(valor.contains("organization:")))
-				&& (!(valor.contains("an"))) && (!(valor.contains("and")))
-				&& (!(valor.contains("as"))) && (!(valor.contains("at")))
-				&& (!(valor.contains("be"))) && (!(valor.contains("but")))
-				&& (!(valor.contains("by"))) && (!(valor.contains("i")))
+//				&& (!(valor.contains("an"))) && (!(valor.contains("and")))
+//				&& (!(valor.contains("as"))) && (!(valor.contains("at")))
+//				&& (!(valor.contains("be"))) && (!(valor.contains("but")))
+//				&& (!(valor.contains("by"))) && (!(valor.contains("i")))
 
 		);
 	}
@@ -198,7 +218,7 @@ public class main {
 			// startCommentsRead = (str.trim().compareTo("") == 0);
 			// }
 			while ((str = in.readLine()) != null) {
-				//if (verificaCabecalho(str)) {
+				if (verificaCabecalho(str)) {
 					StringTokenizer st = new StringTokenizer(str);
 					String cleanStr = "";
 					while (st.hasMoreElements()) {
@@ -207,7 +227,49 @@ public class main {
 								+ " ";
 					}
 					r.append(cleanStr);
-				//}
+				}
+			}
+			File file = new File(fileName);
+
+			File dir = new File(file.getParent() + "/output/");
+			if (!dir.exists())
+				dir.mkdir();
+			writeTextFile(r.toString(),
+					dir.getAbsolutePath() + "/" + file.getName());
+			return r.toString();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return null;
+		}
+
+	}
+	
+	public static String cleanTextFile_Test(String fileName) {
+
+		BufferedReader in;
+		try {
+			in = new BufferedReader(new FileReader(fileName));
+			String str;
+			StringBuffer r = new StringBuffer();
+			boolean startCommentsRead = false;
+
+			// tenta deixar de fora o cabeçalho do e-mail, pulando todas as
+			// linhas até encontrar uma linha em branco.
+			// while (((str = in.readLine()) != null) && !startCommentsRead) {
+			// startCommentsRead = (str.trim().compareTo("") == 0);
+			// }
+			while ((str = in.readLine()) != null) {
+				
+					StringTokenizer st = new StringTokenizer(str);
+					String cleanStr = "";
+					while (st.hasMoreElements()) {
+						String token = st.nextToken();
+						cleanStr += token.trim().toLowerCase()
+								+ " ";
+					}
+					r.append(cleanStr);
+				
 			}
 			File file = new File(fileName);
 
@@ -259,7 +321,18 @@ public class main {
 		}
 
 	}
+	
+	private static void CleanFiles_Test(String dir) {
+		File folder = new File(dir);
+		File[] listOfFiles = folder.listFiles();
+		System.out.println("Cleaning text files from directory " + dir);
+		for (int i = 0; i < listOfFiles.length; i++) {
+			if (listOfFiles[i].isFile()) {
+				cleanTextFile_Test(listOfFiles[i].getAbsolutePath());
+			}
+		}
 
+	}
 	/**
 	 * lê o arquivo de vocabulário para o vocabulário em memória
 	 * 
@@ -394,8 +467,8 @@ public class main {
 			// efetua uma limpeza nos arquivos, direcionando a saída para o
 			// subdiretório "output" de cada classe
 			for (int i = 0; i < trainDirs.length; i++) {
-				CleanFiles(trainDirs[i]);
-				CleanFiles(testDirs[i]);
+				CleanFiles_Test(trainDirs[i]);
+				CleanFiles_Test(testDirs[i]);
 			}
 
 			// using Threads in order to improve reading performance
@@ -420,8 +493,11 @@ public class main {
 
 			// olhar o algoritmo presente no texto-base de bayes
 			Pv = new double[readers.length];
-			for (int i = 0; i < readers.length; i++) {
+			
+			for (int i = 0; i < readers.length; i++)
 				nExamples += readers[i].count;
+			
+			for (int i = 0; i < readers.length; i++) {				
 				results[i] = readers[i].getFilesContent() + "\n";
 				writeTextFile(results[i], localdir.getCanonicalPath()
 						+ "/files/" + internalClassNames[i] + ".text");

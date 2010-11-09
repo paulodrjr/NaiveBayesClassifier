@@ -22,7 +22,7 @@ public class Reader extends Thread {
 	}
 
 	private String getValidWord(String str) {
-		if ((str.length() <= 3) /* || (str.length() > 44) */)
+		if ((str.length() < 3)  || (str.length() > 44) )
 			return "";
 		StringBuilder sb = new StringBuilder();
 		// deixar de fora palavras com caracteres inválidos
@@ -52,10 +52,11 @@ public class Reader extends Thread {
 					String cleanStr = "";
 					while (st.hasMoreElements()) {
 						String token = st.nextToken();
-						cleanStr += getValidWord(token).trim().toLowerCase()
-								+ " ";
+//						cleanStr += getValidWord(token).trim().toLowerCase()
+//								+ " ";
+						cleanStr += token.trim().toLowerCase()	+ " ";
 					}
-					r.append(str);
+					r.append(cleanStr);
 				}
 				return r.toString();
 			} finally {
