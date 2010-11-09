@@ -55,7 +55,7 @@ public class Reader extends Thread {
 						cleanStr += getValidWord(token).trim().toLowerCase()
 								+ " ";
 					}
-					r.append(cleanStr);
+					r.append(str);
 				}
 				return r.toString();
 			} finally {

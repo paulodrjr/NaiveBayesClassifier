@@ -40,7 +40,7 @@ public class main {
 	public static String getValidWord(String str) {
 		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
 		// 44
-		if ((str.length() <= 3) /* || (str.length() > 44) */)
+		if ((str.length() <= 3)  || (str.length() > 44) )
 			return "";
 		StringBuilder sb = new StringBuilder();
 		// deixar de fora palavras com caracteres inválidos
@@ -157,6 +157,26 @@ public class main {
 
 	}
 
+	public static boolean verificaCabecalho(String valor) {
+		valor = valor.toLowerCase().trim();
+		return ((!(valor.contains("subject:")))
+				&& (!(valor.contains("expires:")))
+				&& (!(valor.contains("distribution:")))
+				&& (!(valor.contains("lines:")))
+				&& (!(valor.contains("from:")))
+				&& (!(valor.contains("article-i.d.:")))
+				&& (!(valor.contains("reply-to:")))
+				&& (!(valor.contains("organization:")))
+				&& (!(valor.contains("nntp-posting-host:")))
+				&& (!(valor.contains("organization:")))
+				&& (!(valor.contains("an"))) && (!(valor.contains("and")))
+				&& (!(valor.contains("as"))) && (!(valor.contains("at")))
+				&& (!(valor.contains("be"))) && (!(valor.contains("but")))
+				&& (!(valor.contains("by"))) && (!(valor.contains("i")))
+
+		);
+	}
+
 	/**
 	 * Limpa um arquivo de texto, salvando a saída na pasta "output" da classe
 	 * 
@@ -174,18 +194,20 @@ public class main {
 
 			// tenta deixar de fora o cabeçalho do e-mail, pulando todas as
 			// linhas até encontrar uma linha em branco.
-			while (((str = in.readLine()) != null) && !startCommentsRead) {
-				startCommentsRead = (str.trim().compareTo("") == 0);
-			}
+			// while (((str = in.readLine()) != null) && !startCommentsRead) {
+			// startCommentsRead = (str.trim().compareTo("") == 0);
+			// }
 			while ((str = in.readLine()) != null) {
-
-				StringTokenizer st = new StringTokenizer(str);
-				String cleanStr = "";
-				while (st.hasMoreElements()) {
-					String token = st.nextToken();
-					cleanStr += getValidWord(token).trim().toLowerCase() + " ";
-				}
-				r.append(cleanStr);
+				//if (verificaCabecalho(str)) {
+					StringTokenizer st = new StringTokenizer(str);
+					String cleanStr = "";
+					while (st.hasMoreElements()) {
+						String token = st.nextToken();
+						cleanStr += getValidWord(token).trim().toLowerCase()
+								+ " ";
+					}
+					r.append(cleanStr);
+				//}
 			}
 			File file = new File(fileName);
 
