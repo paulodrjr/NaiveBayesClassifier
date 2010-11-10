@@ -29,18 +29,19 @@ public class Reader extends Thread {
 			try {
 				String str;
 				StringBuffer r = new StringBuffer();
-
+				
 				while ((str = in.readLine()) != null) {
 
 					StringTokenizer st = new StringTokenizer(str);
 					String cleanStr = "";
-					while (st.hasMoreElements()) {
+					while (st.hasMoreElements() && 1==2) {
 						String token = st.nextToken();
 						cleanStr += main.getValidWord(token).trim().toLowerCase()
 								+ " ";
-//						cleanStr += token.trim().toLowerCase()	+ " ";
+						cleanStr += token + " ";
 					}
-					r.append(cleanStr);
+					r.append(str);
+//					r.append(cleanStr);
 				}
 				return r.toString();
 			} finally {
@@ -57,6 +58,8 @@ public class Reader extends Thread {
 
 	private String readTextFile(String fileName) {
 		File file = new File(fileName);
+		if (file.isDirectory())
+			return "";
 		FileInputStream fis = null;
 		BufferedInputStream bis = null;
 		DataInputStream dis = null;
