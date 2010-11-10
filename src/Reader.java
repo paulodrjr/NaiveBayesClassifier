@@ -21,22 +21,6 @@ public class Reader extends Thread {
 		this.printMessages = printOut;
 	}
 
-	private String getValidWord(String str) {
-		if ((str.length() < 3)  || (str.length() > 44) )
-			return "";
-		StringBuilder sb = new StringBuilder();
-		// deixar de fora palavras com caracteres inválidos
-		for (char c : str.toCharArray()) {
-			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-				sb.append(c);
-			} else {
-				if (c == '@')
-					return "";
-			}
-		}
-		return sb.toString();
-	}
-
 	@SuppressWarnings("deprecation")
 	private String readAndCleanTextFile(String fileName) {
 		BufferedReader in;
@@ -52,9 +36,9 @@ public class Reader extends Thread {
 					String cleanStr = "";
 					while (st.hasMoreElements()) {
 						String token = st.nextToken();
-//						cleanStr += getValidWord(token).trim().toLowerCase()
-//								+ " ";
-						cleanStr += token.trim().toLowerCase()	+ " ";
+						cleanStr += main.getValidWord(token).trim().toLowerCase()
+								+ " ";
+//						cleanStr += token.trim().toLowerCase()	+ " ";
 					}
 					r.append(cleanStr);
 				}
