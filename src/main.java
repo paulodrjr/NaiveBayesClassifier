@@ -47,61 +47,65 @@ public class main {
 		}
 		return false;
 	}
-	
+
 	private static String cleanPunctuation(String word) {
 		StringBuilder sb = new StringBuilder();
-		//discard invalid chars (return empty string if @ because it probably represents an e-mail address, which itself is invalid
+		// discard invalid chars (return empty string if @ because it probably
+		// represents an e-mail address, which itself is invalid
 		for (char c : word.toCharArray()) {
-			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) 
+			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
 				sb.append(c);
-			else
-				if (c == '@')
-					return "";
-		}		
+			else if (c == '@')
+				return "";
+		}
 		return sb.toString();
 	}
 
 	/**
-	 * Retorna palavras "válidas", ou string vazio caso contrário.
+	 * Get a word and returns a clean word, considered as "valid". Returns empty
+	 * string otherwise.
 	 * 
 	 * @param word
 	 * @return
 	 */
 	public static String getValidWord(String word) {
-		
-		//remove punctuation from words not classified as header words
+
+		// remove punctuation from words not classified as header words
 		if (!isHeader(word))
 			word = cleanPunctuation(word);
-		
-		//discard words with less than 3 or more then 44 chars
+
+		// discard words with less than 3 or more then 44 chars
 		if ((word.length() < 3) || (word.length() > 44))
 			return "";
-		
-		//discard words with chars sequentially repeated 3 or more times
+
+		// discard words with chars sequentially repeated 3 or more times
 		if (hasCharRepetitions(word, 3))
 			return "";
-		
+
 		StringBuilder sb = new StringBuilder();
-		//after all the previous cleaning, discard words that still have invalid chars
+		// after all the previous cleaning, discard words that still have
+		// invalid chars
 		for (char c : word.toCharArray()) {
 			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
 				sb.append(c);
-			} else {				
+			} else {
 				return "";
 			}
 		}
-		//after all the previous cleaning, discard words that eventually has been shrinked to less than 3 chars
+		// after all the previous cleaning, discard words that eventually has
+		// been shrinked to less than 3 chars
 		if ((sb.length() < 3))
 			return "";
-		
-		//after all the previous cleaning, discard words that eventually ended with invalid chars repetitions
+
+		// after all the previous cleaning, discard words that eventually ended
+		// with invalid chars repetitions
 		if (hasCharRepetitions(sb.toString(), 3))
 			return "";
 		return sb.toString();
 	}
 
 	/**
-	 * Cria o vocabulário (hashMap)
+	 * Create vocabulary (hashMap)
 	 * 
 	 * @param input
 	 * @return
@@ -115,7 +119,7 @@ public class main {
 		StringTokenizer st = new StringTokenizer(input);
 		while (st.hasMoreElements()) {
 
-			//get next token from text (assumes that the text is already clean)
+			// get next token from text (assumes that the text is already clean)
 			word = st.nextToken().toLowerCase().trim();
 
 			int i = word.compareTo(EmptyStr);
@@ -136,7 +140,8 @@ public class main {
 	}
 
 	/**
-	 * Tira do vocabulário as 100 palavras mais frequentes
+	 * Remove top 100 most frequent words, words that appear less than three
+	 * times and empty string token
 	 * 
 	 * @param h
 	 * @return
@@ -145,7 +150,7 @@ public class main {
 			HashMap<String, Integer> h) {
 		HashMap<String, Integer> map = h;
 
-		// remover as palavras que aparecem menos de 3 vezes
+		// remove words that appears less than three times in the vocabulary
 		Iterator<String> it = map.keySet().iterator();
 		ArrayList<String> list = new ArrayList<String>();
 		while (it.hasNext()) {
@@ -154,6 +159,7 @@ public class main {
 				list.add(key);
 		}
 
+		// remove empty token
 		if (map.containsKey(""))
 			list.add("");
 
@@ -164,7 +170,7 @@ public class main {
 		Integer[] values = new Integer[100];
 		String[] keys = new String[100];
 
-		// inicializar arrays
+		// init arrays
 		for (int i = 0; i < values.length; i++) {
 			values[i] = 0;
 			keys[i] = "";
@@ -173,20 +179,23 @@ public class main {
 		it = map.keySet().iterator();
 		while (it.hasNext()) {
 			String word = it.next();
-			// pega a contagem de cada word
-			int v = h.get(word);
+			// get current word count
+			int wCount = h.get(word);
 			int i = 0;
 			boolean done = false;
 			while (i < values.length && !done) {
-				// se a contagem de word for maior que a posição corrente,
-				// mover
-				// contadores anteriores e inserir nova palavra
-				if (v > values[i]) {
+				/*
+				 * if word count is bigger than the count stored in the current
+				 * array position, move the existing values 1 position to the
+				 * end and insert new value in the current position (do the same
+				 * with the keywords array).
+				 */
+				if (wCount > values[i]) {
 					for (int j = values.length - 1; j > i; j--) {
 						values[j] = values[j - 1];
 						keys[j] = keys[j - 1];
 					}
-					values[i] = v;
+					values[i] = wCount;
 					keys[i] = word;
 					done = true;
 				}
@@ -194,7 +203,7 @@ public class main {
 			}
 		}
 
-		// remover do hashmap as 100 palavras encontradas
+		// remove each word stored in the keywords array
 		for (int i = 0; i < keys.length; i++)
 			map.remove(keys[i]);
 
@@ -202,12 +211,11 @@ public class main {
 
 	}
 
-	public static boolean isHeader(String valor) {		
+	public static boolean isHeader(String valor) {
 		return (((valor.contains("subject:")))
 				|| ((valor.contains("expires:")))
 				|| ((valor.contains("distribution:")))
-				|| ((valor.contains("lines:")))
-				|| ((valor.contains("from:")))
+				|| ((valor.contains("lines:"))) || ((valor.contains("from:")))
 				|| ((valor.contains("article-i.d.:")))
 				|| ((valor.contains("in article")))
 				|| ((valor.contains("reply-to:")))
@@ -223,16 +231,13 @@ public class main {
 				|| ((valor.contains("organization:")))
 				|| ((valor.contains("nntp-posting-host:"))) || ((valor
 				.contains("organization:")))
-		// && (!(valor.contains("an"))) && (!(valor.contains("and")))
-		// && (!(valor.contains("as"))) && (!(valor.contains("at")))
-		// && (!(valor.contains("be"))) && (!(valor.contains("but")))
-		// && (!(valor.contains("by"))) && (!(valor.contains("i")))
 
 		);
 	}
 
 	/**
-	 * Limpa um arquivo de texto, salvando a saída na pasta "output" da classe
+	 * Clean a text file, saving the resulting string in the folder "output"
+	 * located in each class
 	 * 
 	 * @param fileName
 	 * @return
@@ -245,7 +250,7 @@ public class main {
 			try {
 				String str;
 				StringBuffer r = new StringBuffer();
-		
+
 				while ((str = in.readLine()) != null) {
 					str = str.trim().toLowerCase();
 					if (!isHeader(str)) {
@@ -253,8 +258,7 @@ public class main {
 						String cleanStr = "";
 						while (st.hasMoreElements()) {
 							String token = st.nextToken();
-							cleanStr += getValidWord(token)
-									+ " ";
+							cleanStr += getValidWord(token) + " ";
 						}
 						r.append(cleanStr);
 					}
@@ -278,9 +282,9 @@ public class main {
 		}
 
 	}
-	
+
 	/**
-	 * Escreve um arquivo de texto
+	 * Writes a text file
 	 * 
 	 * @param input
 	 * @param fileName
@@ -289,7 +293,6 @@ public class main {
 		try {
 			FileWriter outFile = new FileWriter(fileName);
 			PrintWriter out = new PrintWriter(outFile);
-			out.println(input);
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -298,7 +301,7 @@ public class main {
 	}
 
 	/**
-	 * limpa os arquivos de um diretório, segundo escolhas flexíveis
+	 * Cleans every text file located in the directory passed as parameter
 	 * 
 	 * @param dir
 	 */
@@ -315,7 +318,8 @@ public class main {
 	}
 
 	/**
-	 * lê o arquivo de vocabulário para o vocabulário em memória
+	 * Reads an valid vocabulary text file representation to the internal class
+	 * vocabulary variable
 	 * 
 	 * @return
 	 */
@@ -361,7 +365,9 @@ public class main {
 	}
 
 	/**
-	 * Calcula as probabilidades para cada classe, termo a termo
+	 * Calculates the probabilities for every class, token by token, storing
+	 * each class set of probabilities in an internal HashMap and finally saving
+	 * this HashMap to an text file.
 	 * 
 	 * @param classText
 	 * @param className
@@ -400,9 +406,12 @@ public class main {
 
 		System.out
 				.println("----------------------------------------------------------------------\nStarting training round...");
-		// array de hashmap String-Double (um para cada classe), onde armazenar
-		// as probabilidade de cada classe.
-		// olhar algoritmo do texto-base para melhor entendimento
+
+		/*
+		 * HashMap array, with size equal to the class count, used to store the
+		 * class tokens probabilities. Please refer to class notes and Naive
+		 * Bayes base text for a better comprehension.
+		 */
 		pWkV = new HashMap[classCount];
 		for (int i = 0; i < classCount; i++) {
 			System.out.println("Training for class " + internalClassNames[i]);
@@ -419,14 +428,15 @@ public class main {
 	}
 
 	/**
-	 * prepara os arquivos, cria o vocabulário e inicializa os valores da
-	 * instância
+	 * Prepares (clean) classes files, creates the vocabulary and initializes
+	 * internal variables
 	 * 
 	 * @param trainDirs
 	 * @param testDirs
 	 * @param recreateVocabulary
-	 * @return um array de string, onde cada i-ésima posição contém o conteúdo
-	 *         concatenado dos textos da classe
+	 * @return an String array, where every n-th position contains the
+	 *         concatenated content text from each class
+	 * 
 	 */
 	private static String[] prepare(String[] trainDirs, String[] testDirs,
 			boolean recreateVocabulary) {
@@ -435,18 +445,20 @@ public class main {
 		String[] results = null;
 		try {
 
-			if (testDirs.length != trainDirs.length)
-				throw new Exception(
-						"O número de diretórios de teste e de treino tem que ser iguais!");
+			/*
+			 * if (testDirs.length != trainDirs.length) throw new Exception(
+			 * "O número de diretórios de teste e de treino tem que ser iguais!"
+			 * );
+			 */// maybe not
 
-			// inicializa o vetor de nomes de classes
+			// initializes class names array, based on folders within train
+			// directory
 			internalClassNames = getClassNames(trainDirs);
 
 			classCount = trainDirs.length;
 			File VocabularyFile = new File(VocabularyFileName);
 
-			// efetua uma limpeza nos arquivos, direcionando a saída para o
-			// subdiretório "output" de cada classe
+			// clean files
 			for (int i = 0; i < trainDirs.length; i++) {
 				CleanFiles(trainDirs[i]);
 			}
@@ -454,24 +466,24 @@ public class main {
 			// using Threads in order to improve reading performance
 			Reader[] readers = new Reader[trainDirs.length];
 
-			// inicializando threads com caminho de leitura
+			// initializing threads with reading path
 			for (int i = 0; i < trainDirs.length; i++) {
 				readers[i] = new Reader(trainDirs[i] + "/output/", "", true);
 			}
 
-			// inicializar threads para leitura dos arquivos
+			// start all threads for reading text files
 			for (int i = 0; i < readers.length; i++) {
-				readers[i].start();				
+				readers[i].start();
 			}
 
-			// esperar pela finalização da leitura dos arquivos
+			// awaits for threads termination
 			for (int i = 0; i < readers.length; i++)
 				while (readers[i].isAlive()) {
 				}
 
 			results = new String[readers.length];
 
-			// olhar o algoritmo presente no texto-base de bayes
+			// refer to class notes and Naive Bayes base text
 			Pv = new double[readers.length];
 
 			for (int i = 0; i < readers.length; i++)
@@ -488,7 +500,7 @@ public class main {
 			}
 
 			if (recreateVocabulary) {
-				// criar vocabulario com base no conteudo de treinamento
+				// create vocabulary based on each clean class texts
 				vocabulary = createVocabulary(contents);
 
 				StringBuffer s = new StringBuffer();
@@ -520,8 +532,8 @@ public class main {
 	}
 
 	/**
-	 * Retorna um array contendo os nomes das classes (nome das pastas) de um
-	 * array de pastas
+	 * Returns an String array of classes names, based on an array of class
+	 * folders
 	 * 
 	 * @param trainDirs
 	 * @return
@@ -536,7 +548,7 @@ public class main {
 	}
 
 	/**
-	 * Lista os arquivos em um diretório
+	 * Lists files within a directory
 	 * 
 	 * @param dirPath
 	 * @return
@@ -558,11 +570,11 @@ public class main {
 	}
 
 	/**
-	 * Retorna a maior classe (maior posição) de um array
+	 * Returns max class (position referent to max value) in an double array
 	 * 
 	 * @param t
 	 *            Array de double
-	 * @return maior posição do array (não o maior valor!)
+	 * @return int
 	 */
 	public static int max(double[] t) {
 		double maximum = t[0]; // start with the first value
@@ -576,6 +588,9 @@ public class main {
 		return classMax;
 	}
 
+	/**
+	 * reads a file using a Reader thread
+	 */
 	private static String readFile(String filename) {
 		Reader reader;
 		reader = new Reader("", filename, false);
@@ -585,24 +600,29 @@ public class main {
 		return reader.filesContents;
 	}
 
+	/**
+	 * Classify text examples in a given array of test folders
+	 * 
+	 * @param input
+	 */
 	private static void classify(String[] input) {
 		StringBuffer stringBuffer = new StringBuffer();
 		System.out
 				.println("--------------------------------------------------\nStarting classification...");
-		// para cada input, que deve ser um diretório
+
 		for (int i = 0; i < input.length; i++) {
 			System.out.println("Classifying files from folder "
 					+ internalClassNames[i]);
-			// listar os arquivos na pasta output de cada classe
+			// lists files in each folder
 			String[] files = dirlist(input[i] + "/");
 			for (int j = 0; j < files.length; j++) {
-				// classificar o conteúdo de cada arquivo
+				// classify each file content
 				stringBuffer.append(classify(readFile(files[j]), files[j])
 						+ "\n");
 			}
 		}
-		// workaround: por alguma razão, estava zerando quando a divisão era
-		// feita "in-line"
+		// workaround: for some reason, division returned zero when was done
+		// "in-line"
 		double p1 = (classificationSamples - matchCount);
 		double p2 = classificationSamples;
 		double d = p1 / p2;
@@ -612,7 +632,9 @@ public class main {
 			writeTextFile(stringBuffer.toString(), localdir.getCanonicalPath()
 					+ "/files/classification.text");
 			System.out
-					.println("--------------------------------------------------\nClassification finalized. File "
+					.println("--------------------------------------------------\nClassification finalized with error "
+							+ Double.toString(d)
+							+ ". File "
 							+ localdir.getCanonicalPath()
 							+ "/files/classification.text sucessfully created.");
 		} catch (IOException e) {
@@ -621,17 +643,22 @@ public class main {
 		}
 	}
 
+	/**
+	 * Classifies an text input
+	 * @param input
+	 * @param name
+	 * @return
+	 */
 	private static String classify(String input, String name) {
-		// HashMap<String, Double> PwKv1 = getProbabilities("alt.atheism");
 
-		// contador de amostras de classificação
+		// classification samples count
 		classificationSamples++;
 
 		StringTokenizer tokenizer;
 
 		tokenizer = new StringTokenizer(input);
 
-		// array para armazenar os resultados da classificação
+		// double array used to store sum of each class classification
 		double[] classification = new double[classCount];
 		while (tokenizer.hasMoreElements()) {
 			String token = getValidWord(tokenizer.nextToken()).trim()
@@ -657,7 +684,7 @@ public class main {
 			className = f.getParentFile().getName();
 
 		match = (className.compareTo(internalClassNames[classMax]) == 0);
-		// contador de acertos
+
 		if (match)
 			matchCount++;
 		return (" {" + match + "}" + name + " = " + internalClassNames[classMax]);
@@ -667,24 +694,9 @@ public class main {
 	public static void main(String[] args) {
 
 		try {
-			// nome do arquivo de vocabulário
+			// vocabulary file name
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
-
-			// String[] testDirs = {
-			// localdir.getCanonicalPath()
-			// + "/files/20news-bydate-test/rec.autos",
-			// localdir.getCanonicalPath()
-			// + "/files/20news-bydate-test/talk.religion.misc",
-			// localdir.getCanonicalPath()
-			// + "/files/20news-bydate-test/soc.religion.christian" };
-			// String[] trainDirs = {
-			// localdir.getCanonicalPath()
-			// + "/files/20news-bydate-train/rec.autos",
-			// localdir.getCanonicalPath()
-			// + "/files/20news-bydate-train/talk.religion.misc",
-			// localdir.getCanonicalPath()
-			// + "/files/20news-bydate-train/soc.religion.christian" };
 
 			String[] testDirs = dirlist(localdir.getCanonicalPath()
 					+ "/files/20news-bydate-test/");
