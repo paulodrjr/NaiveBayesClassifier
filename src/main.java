@@ -15,9 +15,7 @@ import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
+import java.util.concurrent.Semaphore;
 
 public class main {
 
@@ -34,38 +32,76 @@ public class main {
 	static int matchCount = 0;
 	static int classificationSamples = 0;
 
-	/**
-	 * Retorna palavras "válidas", ou string vazio caso contrário.
-	 * 
-	 * @param str
-	 * @return
-	 */
-	public static String getValidWord(String str) {
-		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
-		// 44
-		str = str.trim().toLowerCase();
-		if (Pattern.matches(".*@.*|.*xxx.*|.{3,}.*", str))
-			return "";
-
-		if ((str.length() < 3) || (str.length() > 44))
-			return "";
-		StringBuilder sb = new StringBuilder();
-		// deixar de fora palavras com caracteres inválidos
-		for (char c : str.toCharArray()) {
-			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-				sb.append(c);
-			} else {
-				if (c == '@')
-					return "";
+	private static boolean hasCharRepetitions(String word, int maxRepetitions) {
+		int repetitions = 1;
+		char buffer = '#';
+		for (char c : word.toCharArray()) {
+			if (c == buffer)
+				repetitions++;
+			else {
+				buffer = c;
+				repetitions = 1;
+			}
+			if (repetitions == maxRepetitions) {
+				return true;
 			}
 		}
+		return false;
+	}
+	
+	private static String cleanPunctuation(String word) {
+		StringBuilder sb = new StringBuilder();
+		// deixar de fora palavras com caracteres inválidos
+		for (char c : word.toCharArray()) {
+			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) 
+				sb.append(c);
+			else
+				if (c == '@')
+					return "";
+		}		
 		return sb.toString();
 	}
 
+	/**
+	 * Retorna palavras "válidas", ou string vazio caso contrário.
+	 * 
+	 * @param word
+	 * @return
+	 */
+	public static String getValidWord(String word) {
+		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
+		// 44
+		if (word.compareTo("motorcycle,") == 0)
+			System.out.println("inexpensive motorcycle");
+		
+		if (!isHeader(word))
+			word = cleanPunctuation(word);
+				
+		if ((word.length() < 3) || (word.length() > 44))
+			return "";
+		if (hasCharRepetitions(word, 3))
+			return "";
+		StringBuilder sb = new StringBuilder();
+		// deixar de fora palavras com caracteres inválidos
+		for (char c : word.toCharArray()) {
+			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+				sb.append(c);
+			} else {				
+				return "";
+			}
+		}
+		if ((sb.length() < 3) || (sb.length() > 44))
+			return "";
+		if (hasCharRepetitions(sb.toString(), 3))
+			return "";
+		return sb.toString();
+	}
+
+
 	public static String getValidWordVocabulary(String str) {
 		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
-		// 44		
-		
+		// 44
+
 		if ((str.length() < 3) || (str.length() > 44))
 			return "";
 		StringBuilder sb = new StringBuilder();
@@ -96,8 +132,9 @@ public class main {
 		while (st.hasMoreElements()) {
 
 			// tenta eliminar tokens indesejáveis
-			//word = getValidWordVocabulary(st.nextToken().toLowerCase().trim());
-			 word = st.nextToken();
+//			 word =
+//			 getValidWordVocabulary(st.nextToken().toLowerCase().trim());
+			word = st.nextToken().toLowerCase().trim();
 
 			int i = word.compareTo(EmptyStr);
 			if (i == 0)
@@ -183,19 +220,26 @@ public class main {
 
 	}
 
-	public static boolean verificaCabecalho(String valor) {
-		valor = valor.toLowerCase().trim();
-//		return (!Pattern.matches("", valor));
-		return ((!(valor.contains("subject:")))
-				&& (!(valor.contains("expires:")))
-				&& (!(valor.contains("distribution:")))
-				&& (!(valor.contains("lines:")))
-				&& (!(valor.contains("from:")))
-				&& (!(valor.contains("article-i.d.:")))
-				&& (!(valor.contains("reply-to:")))
-				&& (!(valor.contains("organization:")))
-				&& (!(valor.contains("keywords:")))
-				&& (!(valor.contains("nntp-posting-host:"))) && (!(valor
+	public static boolean isHeader(String valor) {		
+		return (((valor.contains("subject:")))
+				|| ((valor.contains("expires:")))
+				|| ((valor.contains("distribution:")))
+				|| ((valor.contains("lines:")))
+				|| ((valor.contains("from:")))
+				|| ((valor.contains("article-i.d.:")))
+				|| ((valor.contains("in article")))
+				|| ((valor.contains("reply-to:")))
+				|| ((valor.contains("summary:")))
+				|| ((valor.contains("supersedes:")))
+				|| ((valor.contains("archive-name:")))
+				|| ((valor.contains("keywords:")))
+				|| ((valor.contains("last-modified:")))
+				|| ((valor.contains("version:")))
+				|| ((valor.contains("write to:")))
+				|| ((valor.contains("telephone:")))
+				|| ((valor.contains("fax:")))
+				|| ((valor.contains("organization:")))
+				|| ((valor.contains("nntp-posting-host:"))) || ((valor
 				.contains("organization:")))
 		// && (!(valor.contains("an"))) && (!(valor.contains("and")))
 		// && (!(valor.contains("as"))) && (!(valor.contains("at")))
@@ -216,34 +260,35 @@ public class main {
 		BufferedReader in;
 		try {
 			in = new BufferedReader(new FileReader(fileName));
-			String str;
-			StringBuffer r = new StringBuffer();
-			boolean startCommentsRead = false;
-
-			// tenta deixar de fora o cabeçalho do e-mail, pulando todas as
-			// linhas até encontrar uma linha em branco.
-			// while (((str = in.readLine()) != null) && !startCommentsRead) {
-			// startCommentsRead = (str.trim().compareTo("") == 0);
-			// }
-			while ((str = in.readLine()) != null) {
-				if (verificaCabecalho(str)) {
-					StringTokenizer st = new StringTokenizer(str);
-					String cleanStr = "";
-					while (st.hasMoreElements()) {
-						String token = st.nextToken();
-						cleanStr += getValidWord(token)	+ " ";
+			try {
+				String str;
+				StringBuffer r = new StringBuffer();
+		
+				while ((str = in.readLine()) != null) {
+					str = str.trim().toLowerCase();
+					if (!isHeader(str)) {
+						StringTokenizer st = new StringTokenizer(str);
+						String cleanStr = "";
+						while (st.hasMoreElements()) {
+							String token = st.nextToken();
+							cleanStr += getValidWord(token)
+									+ " ";
+						}
+						r.append(cleanStr);
 					}
-					r.append(cleanStr);
 				}
-			}
-			File file = new File(fileName);
+				File file = new File(fileName);
 
-			File dir = new File(file.getParent() + "/output/");
-			if (!dir.exists())
-				dir.mkdir();
-			writeTextFile(r.toString(),
-					dir.getAbsolutePath() + "/" + file.getName());
-			return r.toString();
+				File dir = new File(file.getParent() + "/output/");
+				if (!dir.exists())
+					dir.mkdir();
+				writeTextFile(r.toString(), dir.getAbsolutePath() + "/"
+						+ file.getName());
+				return r.toString();
+			} finally {
+				in.close();
+			}
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -251,55 +296,7 @@ public class main {
 		}
 
 	}
-
-	public static String cleanTextFile_Test(String fileName) {
-
-		BufferedReader in;
-		try {
-			in = new BufferedReader(new FileReader(fileName));
-			String str;
-			StringBuffer r = new StringBuffer();
-			boolean startCommentsRead = false;
-
-			// tenta deixar de fora o cabeçalho do e-mail, pulando todas as
-			// linhas até encontrar uma linha em branco.
-			// while (((str = in.readLine()) != null) && !startCommentsRead) {
-			// startCommentsRead = (str.trim().compareTo("") == 0);
-			// }
-			while ((str = in.readLine()) != null) {
-
-				String cleanStr = cleanText(str);
-				r.append(cleanStr);
-
-			}
-			File file = new File(fileName);
-
-			File dir = new File(file.getParent() + "/output/");
-			if (!dir.exists())
-				dir.mkdir();
-			writeTextFile(r.toString(),
-					dir.getAbsolutePath() + "/" + file.getName());
-			return r.toString();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			return null;
-		}
-
-	}
-
-	private static String cleanText(String str) {
-		StringTokenizer tokenizer = new StringTokenizer(str);
-		while (tokenizer.hasMoreTokens()) {
-			String token = tokenizer.nextToken();
-			Pattern pattern = Pattern.compile("*@*");
-			Matcher matcher = pattern.matcher(token);
-			if (matcher.matches())
-				token = "";
-		}
-		return null;
-	}
-
+	
 	/**
 	 * Escreve um arquivo de texto
 	 * 
@@ -330,18 +327,6 @@ public class main {
 		for (int i = 0; i < listOfFiles.length; i++) {
 			if (listOfFiles[i].isFile()) {
 				cleanTextFile(listOfFiles[i].getAbsolutePath());
-			}
-		}
-
-	}
-
-	private static void CleanFiles_Test(String dir) {
-		File folder = new File(dir);
-		File[] listOfFiles = folder.listFiles();
-		System.out.println("Cleaning text files from directory " + dir);
-		for (int i = 0; i < listOfFiles.length; i++) {
-			if (listOfFiles[i].isFile()) {
-				cleanTextFile_Test(listOfFiles[i].getAbsolutePath());
 			}
 		}
 
@@ -458,8 +443,8 @@ public class main {
 	 * @param trainDirs
 	 * @param testDirs
 	 * @param recreateVocabulary
-	 * @return um array de string, onde cada i-ésima posição contém o
-	 *         conteúdo concatenado dos textos da classe
+	 * @return um array de string, onde cada i-ésima posição contém o conteúdo
+	 *         concatenado dos textos da classe
 	 */
 	private static String[] prepare(String[] trainDirs, String[] testDirs,
 			boolean recreateVocabulary) {
@@ -482,7 +467,6 @@ public class main {
 			// subdiretório "output" de cada classe
 			for (int i = 0; i < trainDirs.length; i++) {
 				CleanFiles(trainDirs[i]);
-				CleanFiles(testDirs[i]);
 			}
 
 			// using Threads in order to improve reading performance
@@ -495,7 +479,7 @@ public class main {
 
 			// inicializar threads para leitura dos arquivos
 			for (int i = 0; i < readers.length; i++) {
-				readers[i].start();
+				readers[i].start();				
 			}
 
 			// esperar pela finalização da leitura dos arquivos
@@ -628,7 +612,7 @@ public class main {
 			System.out.println("Classifying files from folder "
 					+ internalClassNames[i]);
 			// listar os arquivos na pasta output de cada classe
-			String[] files = dirlist(input[i] + "/output/");
+			String[] files = dirlist(input[i] + "/");
 			for (int j = 0; j < files.length; j++) {
 				// classificar o conteúdo de cada arquivo
 				stringBuffer.append(classify(readFile(files[j]), files[j])
@@ -688,7 +672,7 @@ public class main {
 		File f = new File(name);
 		String className = "";
 		if (f.isFile())
-			className = f.getParentFile().getParentFile().getName();
+			className = f.getParentFile().getName();
 
 		match = (className.compareTo(internalClassNames[classMax]) == 0);
 		// contador de acertos
