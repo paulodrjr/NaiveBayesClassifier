@@ -15,7 +15,6 @@ import java.util.Iterator;
 import java.util.Hashtable;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.concurrent.Semaphore;
 
 public class main {
 
@@ -51,7 +50,7 @@ public class main {
 	
 	private static String cleanPunctuation(String word) {
 		StringBuilder sb = new StringBuilder();
-		// deixar de fora palavras com caracteres inválidos
+		//discard invalid chars (return empty string if @ because it probably represents an e-mail address, which itself is invalid
 		for (char c : word.toCharArray()) {
 			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) 
 				sb.append(c);
@@ -69,20 +68,21 @@ public class main {
 	 * @return
 	 */
 	public static String getValidWord(String word) {
-		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
-		// 44
-		if (word.compareTo("motorcycle,") == 0)
-			System.out.println("inexpensive motorcycle");
 		
+		//remove punctuation from words not classified as header words
 		if (!isHeader(word))
 			word = cleanPunctuation(word);
-				
+		
+		//discard words with less than 3 or more then 44 chars
 		if ((word.length() < 3) || (word.length() > 44))
 			return "";
+		
+		//discard words with chars sequentially repeated 3 or more times
 		if (hasCharRepetitions(word, 3))
 			return "";
+		
 		StringBuilder sb = new StringBuilder();
-		// deixar de fora palavras com caracteres inválidos
+		//after all the previous cleaning, discard words that still have invalid chars
 		for (char c : word.toCharArray()) {
 			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
 				sb.append(c);
@@ -90,29 +90,13 @@ public class main {
 				return "";
 			}
 		}
-		if ((sb.length() < 3) || (sb.length() > 44))
+		//after all the previous cleaning, discard words that eventually has been shrinked to less than 3 chars
+		if ((sb.length() < 3))
 			return "";
+		
+		//after all the previous cleaning, discard words that eventually ended with invalid chars repetitions
 		if (hasCharRepetitions(sb.toString(), 3))
 			return "";
-		return sb.toString();
-	}
-
-
-	public static String getValidWordVocabulary(String str) {
-		// deixar de fora palavras com tamanho menor ou igual a 3 ou maior que
-		// 44
-
-		if ((str.length() < 3) || (str.length() > 44))
-			return "";
-		StringBuilder sb = new StringBuilder();
-		// deixar de fora palavras com caracteres inválidos
-		for (char c : str.toCharArray()) {
-			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
-				sb.append(c);
-			} else {
-				return "";
-			}
-		}
 		return sb.toString();
 	}
 
@@ -131,16 +115,14 @@ public class main {
 		StringTokenizer st = new StringTokenizer(input);
 		while (st.hasMoreElements()) {
 
-			// tenta eliminar tokens indesejáveis
-//			 word =
-//			 getValidWordVocabulary(st.nextToken().toLowerCase().trim());
+			//get next token from text (assumes that the text is already clean)
 			word = st.nextToken().toLowerCase().trim();
 
 			int i = word.compareTo(EmptyStr);
 			if (i == 0)
 				continue;
 
-			// atualiza contagem da palavra
+			// update word count
 			if (map.containsKey(word)) {
 				int count = map.get(word);
 				map.put(word, count + 1);
