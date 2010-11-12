@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -297,6 +296,7 @@ public class main {
 		try {
 			FileWriter outFile = new FileWriter(fileName);
 			PrintWriter out = new PrintWriter(outFile);
+			out.println(input);
 			out.close();
 		} catch (IOException e) {
 			e.printStackTrace();
@@ -381,7 +381,7 @@ public class main {
 		Set<String> e = vocabulary.keySet();
 
 		WordCounter counter = new WordCounter(classText);
-		System.out.println(classText);
+		
 		int n = counter.getWordsCount();
 		HashMap<String, Double> pWkV = new HashMap<String, Double>();
 
@@ -714,7 +714,6 @@ public class main {
 			}
 			in.close();
 			out.close();
-			System.out.println("File copied.");
 		} catch (FileNotFoundException ex) {
 			System.out
 					.println(ex.getMessage() + " in the specified directory.");
@@ -761,58 +760,69 @@ public class main {
 		return (path.delete());
 	}
 
+	/**
+	 * Execute holdout over file set, taking 2/3 to training and 1/3 to test.
+	 * 
+	 * @param sourceDir
+	 * @param testDir
+	 * @param trainDir
+	 */
 	private static void holdOutFiles(String sourceDir, String testDir,
-			String trainDir) {		
-		
+			String trainDir) {
+
+		System.out.println("Executing holdout over file set. Please wait...");
+
 		String[] sourceFolders = dirlist(sourceDir);
-		
+
 		File dir = new File(testDir);
 		deleteDirectory(dir);
 		dir.mkdir();
-		
+
 		dir = new File(trainDir);
 		deleteDirectory(dir);
 		dir.mkdir();
-
+		
+		int lastPrint = -1;	
 		for (int i = 0; i < sourceFolders.length; i++) {
 			File folder = new File(sourceFolders[i]);
 			File[] listOfFiles = folder.listFiles();
 			int fileCount = listOfFiles.length;
 
 			int trainNum = (fileCount / 3) * 2;
-			int testNum = fileCount - trainNum;		
-
-			for (int j = 0; j <= trainNum; j++) {
+			int testNum = fileCount - trainNum;
+						
+			int percent = (i * 100)/sourceFolders.length;
+			if((percent % 10) == 0 && (percent != lastPrint)){
+				System.out.print(percent + "%...");
+				lastPrint = percent;
+			}
+			for (int j = 0; j <= trainNum; j++) {				
 				if (listOfFiles[j].isDirectory())
 					continue;
-				dir = new File(trainDir + "/" + listOfFiles[j].getParentFile().getName());
+				dir = new File(trainDir + "/"
+						+ listOfFiles[j].getParentFile().getName());
 				if (!dir.exists())
 					dir.mkdir();
-				copyfile(listOfFiles[j].getAbsolutePath(), dir.getAbsolutePath() + "/"
-						+ listOfFiles[j].getName());
-			}		
+				copyfile(listOfFiles[j].getAbsolutePath(),
+						dir.getAbsolutePath() + "/" + listOfFiles[j].getName());
+			}
 
-			for (int j = trainNum; j < testNum; j++) {
+			for (int j = trainNum; j < fileCount; j++) {
 				if (listOfFiles[j].isDirectory())
 					continue;
-				dir = new File(testDir + "/" + listOfFiles[j].getParentFile().getName());
+				dir = new File(testDir + "/"
+						+ listOfFiles[j].getParentFile().getName());
 				if (!dir.exists())
 					dir.mkdir();
 				copyfile(listOfFiles[j].getAbsolutePath(),
 						dir.getAbsolutePath() + "/" + listOfFiles[j].getName());
 			}
 		}
+		System.out.println("Done executing holdout over file set.");
 	}
 
-	public static void main(String[] args) {
-
+	private static void executeHoldout() {
 		try {
-			/*
-			 * copyFiles(localdir.getCanonicalPath() +
-			 * "/files/20news-bydate-test/", localdir.getCanonicalPath() +
-			 * "/files/20news-bydate-train/");
-			 */
-			// vocabulary file name
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
 
@@ -837,13 +847,13 @@ public class main {
 			train();
 
 			classify(testDirs);
-			// System.out.println(classify(readFile("/home/paulojr/workspace/NaiveBayesClassifier/files/20news-bydate-test/comp.sys.ibm.pc.hardware/output/60772"),
-			// "teste"));
-			// System.out.println(classify("almish god prayers", "teste"));
-
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	public static void main(String[] args) {
+		executeHoldout();
 	}
 }
