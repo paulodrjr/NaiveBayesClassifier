@@ -1,1 +1,0 @@
-from: 35002_4401@uwovax.uwo.ca subject: how is a loopback connector made? organization: university of western ont, london nntp-posting-host: hydra.uwo.ca lines: 9 i need to know the pins to connect to make a loopback connector for a serial port so i can build one. the loopback connector is used to test the serial port. thanks for any help. steve 

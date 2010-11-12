@@ -1,1 +1,0 @@
-from: mrw54660@eng-nxt01.cso.uiuc.edu (michael r whitchurch) subject: file manager problem organization: university of illinois at urbana lines: 8 whenever i start file manager, the status bar is not displayed, even though it is selected in the options menu. if i deselect it, then select it again, the bar appears. anyone have any ideas why this is happening? thanks mike 

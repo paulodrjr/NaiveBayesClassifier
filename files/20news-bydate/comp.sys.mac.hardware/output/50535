@@ -1,1 +1,0 @@
-from: matt_harrop@magic-bbs.corp.apple.com distribution: na organization: macintosh awareness group in canada subject: re: internal scsi installation, how? lines: 9 >but apple hd sc says "unable to locate a suitable drive on scsi"... >what's he doing wrong? apples hdsc will only format a hard drive that apple sold. you need to use a third party formater like drive7 or spoton. 

@@ -1,1 +1,0 @@
-organization: ministry of education, computer center netnews system v2.3 from: <chlbs079@twnmoe10.bitnet> subject: change default visual lines: 5 my hp720 workstation uses pseudocolor (id 0x21, 255 colors) as the default visual. how can i start x with different visual as default? 
