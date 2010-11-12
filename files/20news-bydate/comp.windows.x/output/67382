@@ -1,0 +1,1 @@
+from: gse9k@uvacs.cs.virginia.edu (scott evans) subject: menubutton widget question reply-to: thrash@virginia.edu (scott evans) organization: make it stop lines: 9 i'm trying to create a button that has both a label and a bitmap using the menubutton widget. is this possible? right now, all i get is the bitmap -- no sign of the label. any help would be appreciated. scott 

@@ -1,0 +1,1 @@
+from: randy@msc.cornell.edu subject: scsi vs. ide organization: cornell university lines: 8 do all scsi cards for dos systems require a separate device driver to be loaded into memory for each scsi device hooked up? will this also be true of the 32-bit os's? thanks. randy 

@@ -1,0 +1,1 @@
+from: mtoivakk@abo.fi (martti toivakka pap) subject: compiled version of vogl-library for pc? keywords: vogl organization: abo akademi university lines: 11 has anybody compiled vogl-graphics library for ibm-pc? i need to call it from ms-fortran but don't have ms-c to compile the sources. thanks for any help... martti toivakka mtoivakk@abo.fi 

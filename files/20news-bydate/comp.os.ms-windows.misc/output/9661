@@ -1,0 +1,1 @@
+from: sp@odin.nosubdomain.nodomain (svein pedersen) subject: utility for updating win.ini and system.ini organization: university of tromsoe, norway lines: 6 i nead a utility for updating (deleting, adding, changing) *.ini files for windows. do i find it on any ftp host? svein 
