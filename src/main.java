@@ -5,10 +5,14 @@ import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -268,8 +272,8 @@ public class main {
 				File dir = new File(file.getParent() + "/output/");
 				if (!dir.exists())
 					dir.mkdir();
-				writeTextFile(r.toString(), dir.getAbsolutePath() + "/"
-						+ file.getName());
+				writeTextFile(r.toString(),
+						dir.getAbsolutePath() + "/" + file.getName());
 				return r.toString();
 			} finally {
 				in.close();
@@ -338,7 +342,6 @@ public class main {
 			bis = new BufferedInputStream(fis);
 			dis = new DataInputStream(bis);
 			// dis.available() returns 0 if the file does not have more lines.
-			final String EmptyStr = "";
 			while (dis.available() != 0) {
 				String s = dis.readLine();
 				if (vocabulary.containsKey(s)) {
@@ -645,6 +648,7 @@ public class main {
 
 	/**
 	 * Classifies an text input
+	 * 
 	 * @param input
 	 * @param name
 	 * @return
@@ -691,12 +695,137 @@ public class main {
 
 	}
 
+	private static void copyfile(String srFile, String dtFile) {
+		try {
+			File f1 = new File(srFile);
+			File f2 = new File(dtFile);
+			InputStream in = new FileInputStream(f1);
+
+			// For Append the file.
+			// OutputStream out = new FileOutputStream(f2,true);
+
+			// For Overwrite the file.
+			OutputStream out = new FileOutputStream(f2);
+
+			byte[] buf = new byte[1024];
+			int len;
+			while ((len = in.read(buf)) > 0) {
+				out.write(buf, 0, len);
+			}
+			in.close();
+			out.close();
+			System.out.println("File copied.");
+		} catch (FileNotFoundException ex) {
+			System.out
+					.println(ex.getMessage() + " in the specified directory.");
+			System.exit(0);
+		} catch (IOException e) {
+			System.out.println(e.getMessage());
+		}
+	}
+
+	/**
+	 * used to put together files from test and train folders
+	 * 
+	 * @param testDir
+	 * @param trainDir
+	 */
+	private static void copyFiles(String testDir, String trainDir) {
+		String[] testFolders = dirlist(testDir);
+		String[] trainFolders = dirlist(trainDir);
+
+		for (int i = 0; i < testFolders.length; i++) {
+			File folder = new File(testFolders[i]);
+			File[] listOfTestFiles = folder.listFiles();
+
+			for (File file : listOfTestFiles) {
+				if (file.isDirectory())
+					continue;
+				copyfile(file.getAbsolutePath(),
+						trainFolders[i] + "/" + file.getName());
+			}
+		}
+	}
+
+	static public boolean deleteDirectory(File path) {
+		if (path.exists()) {
+			File[] files = path.listFiles();
+			for (int i = 0; i < files.length; i++) {
+				if (files[i].isDirectory()) {
+					deleteDirectory(files[i]);
+				} else {
+					files[i].delete();
+				}
+			}
+		}
+		return (path.delete());
+	}
+
+	private static void holdOutFiles(String sourceDir, String testDir,
+			String trainDir) {		
+		
+		String[] sourceFolders = dirlist(sourceDir);
+		
+		File dir = new File(testDir);
+		deleteDirectory(dir);
+		dir.mkdir();
+		
+		dir = new File(trainDir);
+		deleteDirectory(dir);
+		dir.mkdir();
+
+		for (int i = 0; i < sourceFolders.length; i++) {
+			File folder = new File(sourceFolders[i]);
+			File[] listOfFiles = folder.listFiles();
+			int fileCount = listOfFiles.length;
+
+			int trainNum = (fileCount / 3) * 2;
+			int testNum = fileCount - trainNum;		
+
+			for (int j = 0; j <= trainNum; j++) {
+				if (listOfFiles[j].isDirectory())
+					continue;
+				dir = new File(trainDir + "/" + listOfFiles[j].getParentFile().getName());
+				if (!dir.exists())
+					dir.mkdir();
+				copyfile(listOfFiles[j].getAbsolutePath(), dir.getAbsolutePath() + "/"
+						+ listOfFiles[j].getName());
+			}		
+
+			for (int j = trainNum; j < testNum; j++) {
+				if (listOfFiles[j].isDirectory())
+					continue;
+				dir = new File(testDir + "/" + listOfFiles[j].getParentFile().getName());
+				if (!dir.exists())
+					dir.mkdir();
+				copyfile(listOfFiles[j].getAbsolutePath(),
+						dir.getAbsolutePath() + "/" + listOfFiles[j].getName());
+			}
+		}
+	}
+
 	public static void main(String[] args) {
 
 		try {
+			/*
+			 * copyFiles(localdir.getCanonicalPath() +
+			 * "/files/20news-bydate-test/", localdir.getCanonicalPath() +
+			 * "/files/20news-bydate-train/");
+			 */
 			// vocabulary file name
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
+
+			String testDir = localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/";
+
+			String trainDir = localdir.getCanonicalPath()
+					+ "/files/20news-bydate-train/";
+
+			String sourceDir = localdir.getCanonicalPath()
+					+ "/files/20news-bydate/";
+
+			holdOutFiles(sourceDir, testDir, trainDir);
 
 			String[] testDirs = dirlist(localdir.getCanonicalPath()
 					+ "/files/20news-bydate-test/");
