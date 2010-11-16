@@ -30,18 +30,8 @@ public class Reader extends Thread {
 				String str;
 				StringBuffer r = new StringBuffer();
 				
-				while ((str = in.readLine()) != null) {
-
-					StringTokenizer st = new StringTokenizer(str);
-					String cleanStr = "";
-					while (st.hasMoreElements() && 1==2) {
-						String token = st.nextToken();
-						cleanStr += main.getValidWord(token).trim().toLowerCase()
-								+ " ";
-						cleanStr += token + " ";
-					}
+				while ((str = in.readLine()) != null) {					
 					r.append(str);
-//					r.append(cleanStr);
 				}
 				return r.toString();
 			} finally {

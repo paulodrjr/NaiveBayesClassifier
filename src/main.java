@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Hashtable;
+import java.util.Random;
 import java.util.Set;
 import java.util.StringTokenizer;
 
@@ -381,7 +382,7 @@ public class main {
 		Set<String> e = vocabulary.keySet();
 
 		WordCounter counter = new WordCounter(classText);
-		
+
 		int n = counter.getWordsCount();
 		HashMap<String, Double> pWkV = new HashMap<String, Double>();
 
@@ -772,7 +773,7 @@ public class main {
 
 		System.out.println("Executing holdout over file set. Please wait...");
 
-		String[] sourceFolders = dirlist(sourceDir);
+		String[] sourceFolders = dirlist(sourceDir);	
 
 		File dir = new File(testDir);
 		deleteDirectory(dir);
@@ -781,41 +782,61 @@ public class main {
 		dir = new File(trainDir);
 		deleteDirectory(dir);
 		dir.mkdir();
-		
-		int lastPrint = -1;	
+
+		int lastPrint = -1;
 		for (int i = 0; i < sourceFolders.length; i++) {
+			ArrayList<Integer> done = new ArrayList<Integer>();
 			File folder = new File(sourceFolders[i]);
 			File[] listOfFiles = folder.listFiles();
 			int fileCount = listOfFiles.length;
 
 			int trainNum = (fileCount / 3) * 2;
 			int testNum = fileCount - trainNum;
-						
-			int percent = (i * 100)/sourceFolders.length;
-			if((percent % 10) == 0 && (percent != lastPrint)){
+
+			int percent = (i * 100) / sourceFolders.length;
+			if ((percent % 10) == 0 && (percent != lastPrint)) {
 				System.out.print(percent + "%...");
 				lastPrint = percent;
 			}
-			for (int j = 0; j <= trainNum; j++) {				
+
+			// arquivos de treino
+			for (int j = 0; j <= trainNum; j++) {
 				if (listOfFiles[j].isDirectory())
 					continue;
+
+				int n = -1;
+				Random randomGenerator = new Random();
+				while (done.contains(n) || n == -1) {
+					n = randomGenerator.nextInt(listOfFiles.length);
+				}
+				done.add(n);
+
 				dir = new File(trainDir + "/"
-						+ listOfFiles[j].getParentFile().getName());
+						+ listOfFiles[n].getParentFile().getName());
 				if (!dir.exists())
 					dir.mkdir();
-				copyfile(listOfFiles[j].getAbsolutePath(),
-						dir.getAbsolutePath() + "/" + listOfFiles[j].getName());
+				copyfile(listOfFiles[n].getAbsolutePath(),
+						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
 			}
 
-			for (int j = trainNum; j < fileCount; j++) {
+			// arquivos de teste
+			for (int j = 0; j < fileCount; j++) {
 				if (listOfFiles[j].isDirectory())
 					continue;
+
+				int n = j;
+				
+				if (done.contains(n)) 
+					continue;
+				done.add(n);
+
 				dir = new File(testDir + "/"
-						+ listOfFiles[j].getParentFile().getName());
+						+ listOfFiles[n].getParentFile().getName());
+
 				if (!dir.exists())
 					dir.mkdir();
-				copyfile(listOfFiles[j].getAbsolutePath(),
-						dir.getAbsolutePath() + "/" + listOfFiles[j].getName());
+				copyfile(listOfFiles[n].getAbsolutePath(),
+						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
 			}
 		}
 		System.out.println("Done executing holdout over file set.");
