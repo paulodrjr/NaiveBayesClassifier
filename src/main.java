@@ -34,6 +34,7 @@ public class main {
 	static String[] classTexts;
 	static int matchCount = 0;
 	static int classificationSamples = 0;
+	static MatchCounter[] matchCounters;
 
 	private static boolean hasCharRepetitions(String word, int maxRepetitions) {
 		int repetitions = 1;
@@ -610,21 +611,33 @@ public class main {
 	 * @param input
 	 */
 	private static void classify(String[] input) {
-		StringBuffer stringBuffer = new StringBuffer();
+		StringBuffer stringBuffer = new StringBuffer();		
 		System.out
 				.println("--------------------------------------------------\nStarting classification...");
-
+		
+		matchCounters = new MatchCounter[input.length];
 		for (int i = 0; i < input.length; i++) {
 			System.out.println("Classifying files from folder "
 					+ internalClassNames[i]);
 			// lists files in each folder
 			String[] files = dirlist(input[i] + "/");
+			matchCounters[i] = new MatchCounter(input.length);
 			for (int j = 0; j < files.length; j++) {
 				// classify each file content
 				stringBuffer.append(classify(readFile(files[j]), files[j])
 						+ "\n");
 			}
 		}
+		
+		StringBuffer m = new StringBuffer();
+		for (int i = 0; i < classCount; i++) {
+			m.append("Class: " + internalClassNames[i] + ". TP: " + matchCounters[i].getMatchCount() + "; FP: " + matchCounters[i].getTotalErrorCount() + "\n");			
+//			double r1 = (matchCounters[i].getMatchCount() + matchCounters[i].getErrorCount());
+//			double r = (matchCounters[i].getErrorCount()/r1);
+//			m.append("     " + matchCounters[i].getErrorCount() + "/(" + matchCounters[i].getMatchCount() + "+" + matchCounters[i].getErrorCount() + ")   =  " + r + "\n");
+		}
+		
+		
 		// workaround: for some reason, division returned zero when was done
 		// "in-line"
 		double p1 = (classificationSamples - matchCount);
@@ -633,6 +646,8 @@ public class main {
 		stringBuffer.append("Global error: " + Double.toString(d));
 
 		try {
+			writeTextFile(m.toString(), localdir.getCanonicalPath()
+					+ "/files/matriz.text");
 			writeTextFile(stringBuffer.toString(), localdir.getCanonicalPath()
 					+ "/files/classification.text");
 			System.out
@@ -645,6 +660,14 @@ public class main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+
+	private static int getClassIndexByName(String className) {
+		for (int i = 0; i < internalClassNames.length; i++) {
+			if (internalClassNames[i].compareTo(className) == 0)
+				return i;
+		}
+		return -1;
 	}
 
 	/**
@@ -690,8 +713,11 @@ public class main {
 
 		match = (className.compareTo(internalClassNames[classMax]) == 0);
 
-		if (match)
+		if (match) {
 			matchCount++;
+			matchCounters[getClassIndexByName(className)].incMatchCount();
+		} else
+			matchCounters[getClassIndexByName(className)].incErrorCount(classMax);
 		return (" {" + match + "}" + name + " = " + internalClassNames[classMax]);
 
 	}
@@ -773,7 +799,7 @@ public class main {
 
 		System.out.println("Executing holdout over file set. Please wait...");
 
-		String[] sourceFolders = dirlist(sourceDir);	
+		String[] sourceFolders = dirlist(sourceDir);
 
 		File dir = new File(testDir);
 		deleteDirectory(dir);
@@ -825,8 +851,8 @@ public class main {
 					continue;
 
 				int n = j;
-				
-				if (done.contains(n)) 
+
+				if (done.contains(n))
 					continue;
 				done.add(n);
 
