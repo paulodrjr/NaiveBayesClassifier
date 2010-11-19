@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -611,10 +612,10 @@ public class main {
 	 * @param input
 	 */
 	private static void classify(String[] input) {
-		StringBuffer stringBuffer = new StringBuffer();		
+		StringBuffer stringBuffer = new StringBuffer();
 		System.out
 				.println("--------------------------------------------------\nStarting classification...");
-		
+
 		matchCounters = new MatchCounter[input.length];
 		for (int i = 0; i < input.length; i++) {
 			System.out.println("Classifying files from folder "
@@ -628,21 +629,44 @@ public class main {
 						+ "\n");
 			}
 		}
-		
+
+		double p1 = 0;
+		double p2 = 0;
+
 		StringBuffer m = new StringBuffer();
 		for (int i = 0; i < classCount; i++) {
-			m.append("Class: " + internalClassNames[i] + ". TP: " + matchCounters[i].getMatchCount() + "; FP: " + matchCounters[i].getTotalErrorCount() + "\n");			
-//			double r1 = (matchCounters[i].getMatchCount() + matchCounters[i].getErrorCount());
-//			double r = (matchCounters[i].getErrorCount()/r1);
-//			m.append("     " + matchCounters[i].getErrorCount() + "/(" + matchCounters[i].getMatchCount() + "+" + matchCounters[i].getErrorCount() + ")   =  " + r + "\n");
+			m.append("Class: " + internalClassNames[i] + ". Hits: "
+					+ matchCounters[i].getMatchCount() + "\n");
+			for (int j = 0; j < classCount; j++) {
+				if (internalClassNames[j].compareTo(internalClassNames[i]) == 0)
+					continue;
+				m.append(" ----> Classified as " + internalClassNames[j] + ": "
+						+ matchCounters[i].getErrorCount(j) + "\n");
+			}
+			double r1 = (matchCounters[i].getMatchCount() + matchCounters[i]
+					.getTotalErrorCount());
+			p1 += r1;
+			double r = (matchCounters[i].getTotalErrorCount() / r1);
+			p2 += matchCounters[i].getTotalErrorCount();
+			m.append(" ..... Class accuracy: "
+					+ matchCounters[i].getTotalErrorCount() + "/("
+					+ matchCounters[i].getMatchCount() + "+"
+					+ matchCounters[i].getTotalErrorCount() + ")  =  " + r
+					+ "\n");
 		}
-		
-		
+
+		// accuracy measured by confusion table
+		m.append(" Total accuracy: " + p2 / p1 + "\n");
+
 		// workaround: for some reason, division returned zero when was done
 		// "in-line"
-		double p1 = (classificationSamples - matchCount);
-		double p2 = classificationSamples;
+		p1 = (classificationSamples - matchCount);
+		p2 = classificationSamples;
 		double d = p1 / p2;
+
+		// accuracy measured by counting matches
+		m.append(" Global error: " + Double.toString(d));
+
 		stringBuffer.append("Global error: " + Double.toString(d));
 
 		try {
@@ -717,7 +741,8 @@ public class main {
 			matchCount++;
 			matchCounters[getClassIndexByName(className)].incMatchCount();
 		} else
-			matchCounters[getClassIndexByName(className)].incErrorCount(classMax);
+			matchCounters[getClassIndexByName(className)]
+					.incErrorCount(classMax);
 		return (" {" + match + "}" + name + " = " + internalClassNames[classMax]);
 
 	}
@@ -785,6 +810,92 @@ public class main {
 			}
 		}
 		return (path.delete());
+	}
+
+	/**
+	 * 
+	 * @param sourceDir
+	 * @param testDir
+	 * @param trainDir
+	 */
+	private static void crossOverFiles(String sourceDir, String testDir,
+			String trainDir) {
+
+		System.out.println("Executing crossover over file set. Please wait...");
+
+		String[] sourceFolders = dirlist(sourceDir);
+
+		File dir = new File(testDir);
+		deleteDirectory(dir);
+		dir.mkdir();
+
+		dir = new File(trainDir);
+		deleteDirectory(dir);
+		dir.mkdir();
+
+		int lastPrint = -1;
+		for (int i = 0; i < sourceFolders.length; i++) {
+			ArrayList<Integer> done = new ArrayList<Integer>();
+			File folder = new File(sourceFolders[i]);
+			File[] listOfFiles = folder.listFiles();
+			int fileCount = listOfFiles.length;
+
+			double tmp = (double) fileCount / 10;
+			int decimalPlace = 0;
+		    BigDecimal bd = new BigDecimal(tmp);
+		    bd = bd.setScale(decimalPlace,BigDecimal.ROUND_UP);
+		    tmp = bd.doubleValue();		    
+		    
+			int foldSize = bd.intValue();			
+			int trainNum = foldSize * 9;
+			int testNum = fileCount - trainNum;
+
+			int percent = (i * 100) / sourceFolders.length;
+			if ((percent % 10) == 0 && (percent != lastPrint)) {
+				System.out.print(percent + "%...");
+				lastPrint = percent;
+			}
+
+			// arquivos de treino
+			for (int j = 0; j <= trainNum; j++) {
+				if (listOfFiles[j].isDirectory())
+					continue;
+
+				int n = -1;
+				Random randomGenerator = new Random();
+				while (done.contains(n) || n == -1) {
+					n = randomGenerator.nextInt(listOfFiles.length);
+				}
+				done.add(n);
+				int dirIndex = j/(fileCount / 9);
+				dir = new File(trainDir + "/"
+						+ listOfFiles[n].getParentFile().getName() + "/" + dirIndex);
+				if (!dir.exists())
+					dir.mkdirs();
+				copyfile(listOfFiles[n].getAbsolutePath(),
+						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
+			}
+
+			// arquivos de teste
+			for (int j = 0; j < fileCount; j++) {
+				if (listOfFiles[j].isDirectory())
+					continue;
+
+				int n = j;
+
+				if (done.contains(n))
+					continue;
+				done.add(n);				
+				dir = new File(testDir + "/"
+						+ listOfFiles[n].getParentFile().getName() + "/");
+				
+				if (!dir.exists())
+					dir.mkdirs();
+				copyfile(listOfFiles[n].getAbsolutePath(),
+						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
+			}
+		}
+		System.out.println("Done executing crossover over file set.");
 	}
 
 	/**
@@ -900,7 +1011,40 @@ public class main {
 		}
 	}
 
+	private static void executeCrossover() {
+		try {
+			VocabularyFileName = localdir.getCanonicalPath()
+					+ "/files/vocabulary.text";
+
+			String testDir = localdir.getCanonicalPath()
+					+ "/files/20news-bydate-test/";
+
+			String trainDir = localdir.getCanonicalPath()
+					+ "/files/20news-bydate-train/";
+
+			String sourceDir = localdir.getCanonicalPath()
+					+ "/files/20news-bydate/";
+
+			crossOverFiles(sourceDir, testDir, trainDir);
+
+			// String[] testDirs = dirlist(localdir.getCanonicalPath()
+			// + "/files/20news-bydate-test/");
+			// String[] trainDirs = dirlist(localdir.getCanonicalPath()
+			// + "/files/20news-bydate-train/");
+			//
+			// classTexts = prepare(trainDirs, testDirs, true);
+			//
+			// train();
+			//
+			// classify(testDirs);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
 	public static void main(String[] args) {
-		executeHoldout();
+		// executeHoldout();
+		executeCrossover();
 	}
 }
