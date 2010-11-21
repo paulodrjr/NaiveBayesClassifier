@@ -1,4 +1,3 @@
-import java.awt.List;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
@@ -274,8 +273,8 @@ public class main {
 				File dir = new File(file.getParent() + "/output/");
 				if (!dir.exists())
 					dir.mkdir();
-				writeTextFile(r.toString(),
-						dir.getAbsolutePath() + "/" + file.getName());
+				writeTextFile(r.toString(), dir.getAbsolutePath() + "/"
+						+ file.getName());
 				return r.toString();
 			} finally {
 				in.close();
@@ -397,14 +396,14 @@ public class main {
 			double p = d1 / d2;
 			pWkV.put(wk, p);
 		}
-		try {
-			savePercentages(pWkV, localdir.getCanonicalPath() + "/files/pWkV"
-					+ className + ".probabilities");
-			return pWkV;
-		} catch (IOException e1) {
-			e1.printStackTrace();
-			return null;
-		}
+		// try {
+		// savePercentages(pWkV, localdir.getCanonicalPath() + "/files/pWkV"
+		// + className + ".probabilities");
+		return pWkV;
+		// } catch (IOException e1) {
+		// e1.printStackTrace();
+		// return null;
+		// }
 	}
 
 	@SuppressWarnings("unchecked")
@@ -444,7 +443,7 @@ public class main {
 	 *         concatenated content text from each class
 	 * 
 	 */
-	private static String[] prepare(String[] trainDirs, String[] testDirs,
+	private static String[] prepare(String[] trainDirs,
 			boolean recreateVocabulary) {
 
 		String contents = "";
@@ -498,7 +497,7 @@ public class main {
 			for (int i = 0; i < readers.length; i++) {
 				results[i] = readers[i].getFilesContent() + "\n";
 				writeTextFile(results[i], localdir.getCanonicalPath()
-						+ "/files/" + internalClassNames[i] + ".text");
+						+ "/files/output/" + internalClassNames[i] + ".text");
 				contents += results[i];
 				double v1 = readers[i].count;
 				double v2 = nExamples;
@@ -515,9 +514,10 @@ public class main {
 					s.append(it.next() + "\n");
 				}
 				writeTextFile(s.toString(), localdir.getCanonicalPath()
-						+ "/files/vocabulary.text");
+						+ "/files/output/vocabulary.text");
 				System.out.println("File " + localdir.getCanonicalPath()
-						+ "/files/vocabulary.text" + " successfully created.");
+						+ "/files/output/vocabulary.text"
+						+ " successfully created.");
 			} else if (VocabularyFile.exists())
 				readVocabularyFile();
 			else
@@ -611,7 +611,7 @@ public class main {
 	 * 
 	 * @param input
 	 */
-	private static void classify(String[] input) {
+	private static double classify(String[] input, String method, int step) {
 		StringBuffer stringBuffer = new StringBuffer();
 		System.out
 				.println("--------------------------------------------------\nStarting classification...");
@@ -662,21 +662,26 @@ public class main {
 		// "in-line"
 		p1 = (classificationSamples - matchCount);
 		p2 = classificationSamples;
-		double d = p1 / p2;
+		double error = p1 / p2;
 
 		// accuracy measured by counting matches
-		m.append(" Global error: " + Double.toString(d));
+		m.append(" Global error: " + Double.toString(error));
 
-		stringBuffer.append("Global error: " + Double.toString(d));
+		stringBuffer.append("Global error: " + Double.toString(error));
 
 		try {
-			writeTextFile(m.toString(), localdir.getCanonicalPath()
-					+ "/files/matriz.text");
+			File f = new File(localdir.getCanonicalPath() + "/files/" + method
+					+ "/" + step);
+			if (f.exists())
+				deleteDirectory(f);
+			f.mkdirs();
+			writeTextFile(m.toString(), localdir.getCanonicalPath() + "/files/"
+					+ method + "/" + step + "/matriz.text");
 			writeTextFile(stringBuffer.toString(), localdir.getCanonicalPath()
-					+ "/files/classification.text");
+					+ "/files/" + method + "/" + step + "/classification.text");
 			System.out
 					.println("--------------------------------------------------\nClassification finalized with error "
-							+ Double.toString(d)
+							+ Double.toString(error)
 							+ ". File "
 							+ localdir.getCanonicalPath()
 							+ "/files/classification.text sucessfully created.");
@@ -684,6 +689,7 @@ public class main {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		return error;
 	}
 
 	private static int getClassIndexByName(String className) {
@@ -792,8 +798,8 @@ public class main {
 			for (File file : listOfTestFiles) {
 				if (file.isDirectory())
 					continue;
-				copyfile(file.getAbsolutePath(),
-						trainFolders[i] + "/" + file.getName());
+				copyfile(file.getAbsolutePath(), trainFolders[i] + "/"
+						+ file.getName());
 			}
 		}
 	}
@@ -813,93 +819,165 @@ public class main {
 	}
 
 	/**
+	 * Excute crossValidation over file set. First, the source set of files is
+	 * randomized to an File Array. Next, files are copied from source folders
+	 * to train and test folders, using the cross-validation method to select 9
+	 * folds to train and 1 fold to test.
 	 * 
 	 * @param sourceDir
 	 * @param testDir
 	 * @param trainDir
 	 */
-	private static void crossOverFiles(String sourceDir, String testDir,
+	private static void crossValidateFiles(String sourceDir, String testDir,
 			String trainDir) {
 
-		System.out.println("Executing crossover over file set. Please wait...");
+		System.out
+				.println("Executing Cross-Validation over file set. Please wait...");
 
-		String[] sourceFolders = dirlist(sourceDir);
+		String[] sourceFolders = dirlist(sourceDir);// lists folders from source
+		// folder
 
-		File dir = new File(testDir);
-		deleteDirectory(dir);
-		dir.mkdir();
-
-		dir = new File(trainDir);
-		deleteDirectory(dir);
-		dir.mkdir();
-
-		int lastPrint = -1;
+		File[][] randomizedFiles = new File[sourceFolders.length][];
+		// randomize file array
 		for (int i = 0; i < sourceFolders.length; i++) {
 			ArrayList<Integer> done = new ArrayList<Integer>();
 			File folder = new File(sourceFolders[i]);
 			File[] listOfFiles = folder.listFiles();
-			int fileCount = listOfFiles.length;
+			randomizedFiles[i] = new File[listOfFiles.length];
 
-			double tmp = (double) fileCount / 10;
-			int decimalPlace = 0;
-		    BigDecimal bd = new BigDecimal(tmp);
-		    bd = bd.setScale(decimalPlace,BigDecimal.ROUND_UP);
-		    tmp = bd.doubleValue();		    
-		    
-			int foldSize = bd.intValue();			
-			int trainNum = foldSize * 9;
-			int testNum = fileCount - trainNum;
-
-			int percent = (i * 100) / sourceFolders.length;
-			if ((percent % 10) == 0 && (percent != lastPrint)) {
-				System.out.print(percent + "%...");
-				lastPrint = percent;
-			}
-
-			// arquivos de treino
-			for (int j = 0; j <= trainNum; j++) {
-				if (listOfFiles[j].isDirectory())
-					continue;
-
+			for (int j = 0; j < listOfFiles.length; j++) {
 				int n = -1;
 				Random randomGenerator = new Random();
 				while (done.contains(n) || n == -1) {
 					n = randomGenerator.nextInt(listOfFiles.length);
 				}
 				done.add(n);
-				int dirIndex = j/(fileCount / 9);
-				dir = new File(trainDir + "/"
-						+ listOfFiles[n].getParentFile().getName() + "/" + dirIndex);
-				if (!dir.exists())
-					dir.mkdirs();
-				copyfile(listOfFiles[n].getAbsolutePath(),
-						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
+				randomizedFiles[i][j] = listOfFiles[n];
 			}
 
-			// arquivos de teste
-			for (int j = 0; j < fileCount; j++) {
-				if (listOfFiles[j].isDirectory())
-					continue;
+		}
 
-				int n = j;
+		double error[] = new double[10];
+		double mean = 0;
 
-				if (done.contains(n))
-					continue;
-				done.add(n);				
-				dir = new File(testDir + "/"
-						+ listOfFiles[n].getParentFile().getName() + "/");
-				
-				if (!dir.exists())
-					dir.mkdirs();
-				copyfile(listOfFiles[n].getAbsolutePath(),
-						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
+		/*
+		 * execute 10 times, each one over a different file set, formed by 9
+		 * train folds and 1 test fold, where the test fold is k-fold and the
+		 * train folds is the rest
+		 */
+		for (int k = 0; k < 10; k++) {
+			int d = 0;
+			// delete train dir before creating train file set
+			File dir = new File(testDir);
+			deleteDirectory(dir);
+			dir.mkdir();
+
+			// delete test dir before creating test file set
+			dir = new File(trainDir);
+			deleteDirectory(dir);
+			dir.mkdir();
+
+			for (int i = 0; i < sourceFolders.length; i++) {
+
+				// to get the rounded integer (e.g. 79.9 = 80)
+				double tmp = (double) randomizedFiles[i].length / 10;
+				int decimalPlace = 0;
+				BigDecimal bd = new BigDecimal(tmp);
+				bd = bd.setScale(decimalPlace, BigDecimal.ROUND_UP);
+				tmp = bd.doubleValue();
+
+				int foldSize = bd.intValue();
+				d = k * foldSize;
+				// copy train files, from 0 to start of test fold -1
+				for (int j = 0; j < d; j++) {
+					if (j >= randomizedFiles[i].length)
+						continue;
+					dir = new File(trainDir + "/"
+							+ randomizedFiles[i][j].getParentFile().getName()
+							+ "/");
+					if (!dir.exists())
+						dir.mkdirs();
+					// copy file from source to dest folder
+					copyfile(randomizedFiles[i][j].getAbsolutePath(), dir
+							.getAbsolutePath()
+							+ "/" + randomizedFiles[i][j].getName());
+				}
+
+				// copy test files, from start to the end of test fold
+				for (int j = d; j < (k + 1) * foldSize; j++) {
+					if (j >= randomizedFiles[i].length)
+						continue;
+					dir = new File(testDir + "/"
+							+ randomizedFiles[i][j].getParentFile().getName()
+							+ "/");
+					if (!dir.exists())
+						dir.mkdirs();
+					copyfile(randomizedFiles[i][j].getAbsolutePath(), dir
+							.getAbsolutePath()
+							+ "/" + randomizedFiles[i][j].getName());
+
+				}
+
+				// copy train files, from the end of test fold +1 to the end of
+				// the files array
+				for (int j = (k + 1) * foldSize; j < randomizedFiles[i].length; j++) {
+
+					dir = new File(trainDir + "/"
+							+ randomizedFiles[i][j].getParentFile().getName()
+							+ "/");
+					if (!dir.exists())
+						dir.mkdirs();
+					copyfile(randomizedFiles[i][j].getAbsolutePath(), dir
+							.getAbsolutePath()
+							+ "/" + randomizedFiles[i][j].getName());
+
+				}
+
+			}
+			// after create train and test files sets, execute train and test
+			// tasks
+			String[] testDirs;
+			try {
+				testDirs = dirlist(localdir.getCanonicalPath()
+						+ "/files/20news-bydate-test/");
+
+				String[] trainDirs = dirlist(localdir.getCanonicalPath()
+						+ "/files/20news-bydate-train/");
+
+				classTexts = prepare(trainDirs, true);
+
+				train();
+
+				error[k] = classify(testDirs, "crossvalidation", k + 1);
+				mean += error[k];
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
 			}
 		}
 		System.out.println("Done executing crossover over file set.");
+
+		mean = mean / 10;
+		double err = 0;
+		for (int i = 0; i < 10; i++) {
+			err += Math.pow(error[i] - mean, 2);
+		}
+
+		err = Math.sqrt(err / 10);
+
+		String output = "Mean: " + mean + "\nStandard deviation: " + err;
+		try {
+			writeTextFile(output, localdir.getCanonicalPath()
+					+ "/files/crossvalidation/error.text");
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
-	 * Execute holdout over file set, taking 2/3 to training and 1/3 to test.
+	 * Execute holdout over file set, taking 2/3 to train and 1/3 to test. Files
+	 * are random taken.
 	 * 
 	 * @param sourceDir
 	 * @param testDir
@@ -928,7 +1006,6 @@ public class main {
 			int fileCount = listOfFiles.length;
 
 			int trainNum = (fileCount / 3) * 2;
-			int testNum = fileCount - trainNum;
 
 			int percent = (i * 100) / sourceFolders.length;
 			if ((percent % 10) == 0 && (percent != lastPrint)) {
@@ -952,8 +1029,9 @@ public class main {
 						+ listOfFiles[n].getParentFile().getName());
 				if (!dir.exists())
 					dir.mkdir();
-				copyfile(listOfFiles[n].getAbsolutePath(),
-						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
+				copyfile(listOfFiles[n].getAbsolutePath(), dir
+						.getAbsolutePath()
+						+ "/" + listOfFiles[n].getName());
 			}
 
 			// arquivos de teste
@@ -972,8 +1050,9 @@ public class main {
 
 				if (!dir.exists())
 					dir.mkdir();
-				copyfile(listOfFiles[n].getAbsolutePath(),
-						dir.getAbsolutePath() + "/" + listOfFiles[n].getName());
+				copyfile(listOfFiles[n].getAbsolutePath(), dir
+						.getAbsolutePath()
+						+ "/" + listOfFiles[n].getName());
 			}
 		}
 		System.out.println("Done executing holdout over file set.");
@@ -1000,18 +1079,18 @@ public class main {
 			String[] trainDirs = dirlist(localdir.getCanonicalPath()
 					+ "/files/20news-bydate-train/");
 
-			classTexts = prepare(trainDirs, testDirs, true);
+			classTexts = prepare(trainDirs, true);
 
 			train();
 
-			classify(testDirs);
+			classify(testDirs, "holdout", 1);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	private static void executeCrossover() {
+	private static void executeCrossValidation() {
 		try {
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
@@ -1025,18 +1104,22 @@ public class main {
 			String sourceDir = localdir.getCanonicalPath()
 					+ "/files/20news-bydate/";
 
-			crossOverFiles(sourceDir, testDir, trainDir);
+			crossValidateFiles(sourceDir, testDir, trainDir);
 
-			// String[] testDirs = dirlist(localdir.getCanonicalPath()
-			// + "/files/20news-bydate-test/");
-			// String[] trainDirs = dirlist(localdir.getCanonicalPath()
-			// + "/files/20news-bydate-train/");
-			//
-			// classTexts = prepare(trainDirs, testDirs, true);
-			//
-			// train();
-			//
-			// classify(testDirs);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private static void init() {
+		File temp;
+		try {
+			temp = new File(localdir.getCanonicalPath() + "/files/output/");
+			if (temp.exists())
+				deleteDirectory(temp);
+			temp.mkdirs();
+
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -1044,7 +1127,9 @@ public class main {
 	}
 
 	public static void main(String[] args) {
+		init();
 		// executeHoldout();
-		executeCrossover();
+
+		executeCrossValidation();
 	}
 }
