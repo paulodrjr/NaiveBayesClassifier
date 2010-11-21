@@ -141,7 +141,7 @@ public class main {
 		System.out.println("Creating vocabulary done.");
 
 		return cleanVocabulary(map);
-		// return map;
+//		 return map;
 	}
 
 	/**
@@ -646,7 +646,7 @@ public class main {
 			double r1 = (matchCounters[i].getMatchCount() + matchCounters[i]
 					.getTotalErrorCount());
 			p1 += r1;
-			double r = (matchCounters[i].getTotalErrorCount() / r1);
+			double r = 1-(matchCounters[i].getTotalErrorCount() / r1);
 			p2 += matchCounters[i].getTotalErrorCount();
 			m.append(" ..... Class accuracy: "
 					+ matchCounters[i].getTotalErrorCount() + "/("
@@ -656,7 +656,7 @@ public class main {
 		}
 
 		// accuracy measured by confusion table
-		m.append(" Total accuracy: " + p2 / p1 + "\n");
+		m.append(" Total accuracy: " + (1-(p2 / p1)) + "\n");
 
 		// workaround: for some reason, division returned zero when was done
 		// "in-line"
@@ -1128,7 +1128,7 @@ public class main {
 
 	public static void main(String[] args) {
 		init();
-		// executeHoldout();
+		 executeHoldout();
 
 		executeCrossValidation();
 	}
