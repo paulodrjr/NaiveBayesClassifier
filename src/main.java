@@ -611,7 +611,7 @@ public class main {
 	 * 
 	 * @param input
 	 */
-	private static double classify(String[] input, String method, int step) {
+	private static double classify(String[] input, String method, int step, String outputFileName) {
 		StringBuffer stringBuffer = new StringBuffer();
 		System.out
 				.println("--------------------------------------------------\nStarting classification...");
@@ -674,9 +674,15 @@ public class main {
 					+ "/" + step);
 			if (f.exists())
 				deleteDirectory(f);
-			f.mkdirs();
-			writeTextFile(m.toString(), localdir.getCanonicalPath() + "/files/"
-					+ method + "/" + step + "/matriz.text");
+			
+			f.mkdirs();	
+			
+			if (method == "holdout")
+				writeTextFile(m.toString(), outputFileName);
+			else
+				writeTextFile(m.toString(), localdir.getCanonicalPath() + "/files/"
+						+ method + "/" + step + "/matriz.text");
+			
 			writeTextFile(stringBuffer.toString(), localdir.getCanonicalPath()
 					+ "/files/" + method + "/" + step + "/classification.text");
 			System.out
@@ -819,7 +825,7 @@ public class main {
 	}
 
 	/**
-	 * Excute crossValidation over file set. First, the source set of files is
+	 * Execute crossValidation over file set. First, the source set of files is
 	 * randomized to an File Array. Next, files are copied from source folders
 	 * to train and test folders, using the cross-validation method to select 9
 	 * folds to train and 1 fold to test.
@@ -829,7 +835,7 @@ public class main {
 	 * @param trainDir
 	 */
 	private static void crossValidateFiles(String sourceDir, String testDir,
-			String trainDir) {
+			String trainDir, String outputFileName) {
 
 		System.out
 				.println("Executing Cross-Validation over file set. Please wait...");
@@ -948,14 +954,14 @@ public class main {
 
 				train();
 
-				error[k] = classify(testDirs, "crossvalidation", k + 1);
+				error[k] = classify(testDirs, "crossvalidation", k + 1, "");
 				mean += error[k];
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
-		System.out.println("Done executing crossover over file set.");
+		System.out.println("Done executing Cross-Validation over file set.");
 
 		mean = mean / 10;
 		double err = 0;
@@ -965,11 +971,12 @@ public class main {
 
 		err = Math.sqrt(err / 10);
 
-		String output = "Mean: " + mean + "\nStandard deviation: " + err;
+		String output = "Cross-Validation Results\nError Mean: " + mean + "\nStandard deviation: " + err;
 		try {
-			writeTextFile(output, localdir.getCanonicalPath()
-					+ "/files/crossvalidation/error.text");
-		} catch (IOException e) {
+//			writeTextFile(output, localdir.getCanonicalPath()
+//					+ "/files/crossvalidation/error.text");
+			writeTextFile(output, outputFileName);
+		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
@@ -1058,7 +1065,7 @@ public class main {
 		System.out.println("Done executing holdout over file set.");
 	}
 
-	private static void executeHoldout() {
+	private static void executeHoldout(String sourceDir, String outputFileName) {
 		try {
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
@@ -1069,8 +1076,8 @@ public class main {
 			String trainDir = localdir.getCanonicalPath()
 					+ "/files/20news-bydate-train/";
 
-			String sourceDir = localdir.getCanonicalPath()
-					+ "/files/20news-bydate/";
+//			String sourceDir = localdir.getCanonicalPath()
+//					+ "/files/20news-bydate/";
 
 			holdOutFiles(sourceDir, testDir, trainDir);
 
@@ -1083,14 +1090,14 @@ public class main {
 
 			train();
 
-			classify(testDirs, "holdout", 1);
+			classify(testDirs, "holdout", 1, outputFileName);
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}
 
-	private static void executeCrossValidation() {
+	private static void executeCrossValidation(String sourceDir, String outputFileName) {
 		try {
 			VocabularyFileName = localdir.getCanonicalPath()
 					+ "/files/vocabulary.text";
@@ -1101,10 +1108,10 @@ public class main {
 			String trainDir = localdir.getCanonicalPath()
 					+ "/files/20news-bydate-train/";
 
-			String sourceDir = localdir.getCanonicalPath()
-					+ "/files/20news-bydate/";
+//			String sourceDir = localdir.getCanonicalPath()
+//					+ "/files/20news-bydate/";
 
-			crossValidateFiles(sourceDir, testDir, trainDir);
+			crossValidateFiles(sourceDir, testDir, trainDir, outputFileName);
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -1128,8 +1135,28 @@ public class main {
 
 	public static void main(String[] args) {
 		init();
-		 executeHoldout();
-
-		executeCrossValidation();
+		String x = "";
+		for (int i = 0; i < args.length; i++) {
+			x += args[i] + "\n";
+		}
+		System.out.println(args[0]);
+		System.out.println(args[1]);
+		System.out.println(args[2]);
+		if(args.length==0){
+			System.out.println("Please, supply command line arguments!");
+			return;
+		}
+		File sourceDir = new File(args[0]);
+		if (!sourceDir.exists()){
+			System.out.println("Source dir does not exists!");
+			return;
+		}
+//		if (args[2] == "h")
+			executeHoldout(args[0], args[1]);
+//		else
+//			if (args[2].trim() == "c")
+//				executeCrossValidation(args[0], args[1]);
+//			else
+//				System.out.println("Please, choose the validation method!");
 	}
 }
