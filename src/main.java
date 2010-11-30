@@ -61,6 +61,8 @@ public class main {
 		for (char c : word.toCharArray()) {
 			if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'))
 				sb.append(c);
+			else if (c == '.' || c == ',' || c == ';')
+				sb.append(' ');
 			else if (c == '@')
 				return "";
 		}
@@ -81,7 +83,7 @@ public class main {
 			word = cleanPunctuation(word);
 
 		// discard words with less than 3 or more then 44 chars
-		if ((word.length() < 3) || (word.length() > 44))
+		if ((word.length() < 3) || (word.length() > 30))
 			return "";
 
 		// discard words with chars sequentially repeated 3 or more times
@@ -100,7 +102,7 @@ public class main {
 		}
 		// after all the previous cleaning, discard words that eventually has
 		// been shrinked to less than 3 chars
-		if ((sb.length() < 3))
+		if ((sb.length() < 3) || (sb.length() > 30))
 			return "";
 
 		// after all the previous cleaning, discard words that eventually ended
@@ -841,12 +843,13 @@ public class main {
 
 		System.out
 				.println("Executing Cross-Validation over file set. Please wait...");
-
+		
 		String[] sourceFolders = dirlist(sourceDir);// lists folders from source
 		// folder
 
 		File[][] randomizedFiles = new File[sourceFolders.length][];
 		// randomize file array
+		
 		nExamplesCV = 0;
 		for (int i = 0; i < sourceFolders.length; i++) {
 			ArrayList<Integer> done = new ArrayList<Integer>();
@@ -854,7 +857,7 @@ public class main {
 			File[] listOfFiles = folder.listFiles();
 			randomizedFiles[i] = new File[listOfFiles.length];
 			nExamplesCV += listOfFiles.length;
-			for (int j = 0; j < listOfFiles.length; j++) {				
+			for (int j = 0; j < listOfFiles.length; j++) {
 				int n = -1;
 				Random randomGenerator = new Random();
 				while (done.contains(n) || n == -1) {
@@ -865,7 +868,7 @@ public class main {
 			}
 
 		}
-
+		
 		double error[] = new double[10];
 		double mean = 0;
 
@@ -875,7 +878,8 @@ public class main {
 		 * train folds is the rest
 		 */
 		for (int k = 0; k < 10; k++) {
-			System.out.println("\nStarting Cross-Validation (Step " + (k+1) + " of 10)");
+			System.out.println("\nStarting Cross-Validation (Step " + (k + 1)
+					+ " of 10)");
 			int d = 0;
 			// delete train dir before creating train file set
 			File dir = new File(testDir);
@@ -1119,10 +1123,7 @@ public class main {
 			String trainDir = localdir.getCanonicalPath()
 					+ "/files/20news-bydate-train/";
 
-			String sourceDir2 = localdir.getCanonicalPath()
-					+ "/files/20news-bydate/";
-
-			crossValidateFiles(sourceDir2, testDir, trainDir, outputFileName);
+			crossValidateFiles(sourceDir, testDir, trainDir, outputFileName);
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -1137,6 +1138,16 @@ public class main {
 			if (temp.exists())
 				deleteDirectory(temp);
 			temp.mkdirs();
+			
+			temp = new File(localdir.getCanonicalPath() + "/files/20news-bydate-test/");
+			if (temp.exists())
+				deleteDirectory(temp);
+			temp.mkdirs();
+			
+			temp = new File(localdir.getCanonicalPath() + "/files/20news-bydate-train/");
+			if (temp.exists())
+				deleteDirectory(temp);
+			temp.mkdirs();
 
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
@@ -1145,40 +1156,45 @@ public class main {
 	}
 
 	public static void main(String[] args) {
+		if (args.length == 0) {
+			System.out
+					.println(" =======================+++ Naive Bayes Text Classifier +++======================= ");
+			System.out
+					.println(" ======= Developed by\n  ++++ Celso Reis Alves\n  ++++ Leila Chan Choimei\n  ++++ Marcos S. Ferreira\n  ++++Paulo Degering R. Junior (paulo.usp.each@gmail.com)\n  ++++Roberta Lima");
+			System.out
+					.println(" ============== Artificial Intelligence / 2010 .:. EACH - USP ============= ");
+			System.out
+					.println(" ======= Copy, distribution and changes to this program is GRANTED =======");
+			System.out
+					.println(" =========================================================================");
+			System.out
+					.println("\n ======= To use this program, you need to have a folder with two or more classes from 20news dataset. All the train and test files MUST BE merged in this folder, in order to avoid learning deviation.");
+			System.out
+					.println(" ======= This program is meant to, in a single iteration, learn from training set and classify the test set.");
+			System.out
+					.println(" ======= Training set and data set are automatically chosen from data set source folder, depending on wich type of method is used to evaluate system performance (holdout or cross-validation).");
+			System.out
+					.println("\n ======= To start using the program, please supply: ");
+			System.out
+					.println("  +++ Source data set folder (e.g. C:\\20news) ");
+			System.out.println("  +++ Output text file (e.g. C:\\output.txt) ");
+			System.out
+					.println("  +++ \"h\" to Holdout or \"c\" to Cross-Validation ");
+			return;
+		}
 		init();
-
-		try {
-			executeHoldout(localdir.getCanonicalPath()
-					+ "/files/20news-bydate/", localdir.getCanonicalPath()
-					+ "/files/holdout_output.text");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		try {
-			executeCrossValidation(localdir.getCanonicalPath()
-					+ "/files/20news-bydate/", localdir.getCanonicalPath()
-					+ "/files/cross-validation_output.text");
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+		args[0] = args[0] + "\\";
+		File sourceDir = new File(args[0]);
+		if (!sourceDir.exists()) {
+			System.out.println("Source dir does not exists!");
+			return;
 		}
 
-		/*
-		 * String x = ""; for (int i = 0; i < args.length; i++) { x += args[i] +
-		 * "\n"; } System.out.println(args[0]); System.out.println(args[1]);
-		 * System.out.println(args[2]); if(args.length==0){
-		 * System.out.println("Please, supply command line arguments!"); return;
-		 * } File sourceDir = new File(args[0]); if (!sourceDir.exists()){
-		 * System.out.println("Source dir does not exists!"); return; }
-		 */
-		// if (args[2] == "h")
-		// executeHoldout(args[0], args[1]);
-		// else
-		// if (args[2].trim() == "c")
-		// executeCrossValidation(args[0], args[1]);
-		// else
-		// System.out.println("Please, choose the validation method!");
+		if (args[2].compareTo("h") == 0)
+			executeHoldout(args[0], args[1]);
+		else if (args[2].compareTo("c") == 0)
+			executeCrossValidation(args[0], args[1]);
+		else
+			System.out.println("Please, choose the validation method!");
 	}
 }
